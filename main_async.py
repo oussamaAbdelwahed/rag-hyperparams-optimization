@@ -1,0 +1,183 @@
+"""
+Async Hyperparameter Optimization for RAG
+"""
+
+import asyncio
+import nest_asyncio
+import os
+import numpy as np
+from pathlib import Path
+
+nest_asyncio.apply()
+
+from llama_index.readers.file import PDFReader  # type: ignore
+from llama_index.core import Document
+from llama_index.core.evaluation import QueryResponseDataset
+from llama_index.core import (
+    VectorStoreIndex,
+    load_index_from_storage,
+    StorageContext,
+)
+from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.experimental.param_tuner import AsyncParamTuner  # type: ignore
+from llama_index.core.param_tuner.base import RunResult  # type: ignore
+from llama_index.core.evaluation.eval_utils import aget_responses
+from llama_index.core.evaluation import (
+    SemanticSimilarityEvaluator,
+    BatchEvalRunner,
+)
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
+
+
+# Helper Functions
+
+def _build_index(chunk_size, docs):
+    """Build or load index with specified chunk size."""
+    index_out_path = f"./storage_{chunk_size}"
+    if not os.path.exists(index_out_path):
+        Path(index_out_path).mkdir(parents=True, exist_ok=True)
+        # parse docs
+        node_parser = SimpleNodeParser.from_defaults(chunk_size=chunk_size)
+        base_nodes = node_parser.get_nodes_from_documents(docs)
+
+        # build index
+        index = VectorStoreIndex(base_nodes)
+        # save index to disk
+        index.storage_context.persist(index_out_path)
+    else:
+        # rebuild storage context
+        storage_context = StorageContext.from_defaults(
+            persist_dir=index_out_path
+        )
+        # load index
+        index = load_index_from_storage(
+            storage_context,
+        )
+    return index
+
+
+def _get_eval_batch_runner():
+    """Get evaluation batch runner."""
+    # Use free HuggingFace embedding model instead of OpenAI
+    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    evaluator_s = SemanticSimilarityEvaluator(embed_model=embed_model)
+    eval_batch_runner = BatchEvalRunner(
+        {"semantic_similarity": evaluator_s}, workers=2, show_progress=True
+    )
+    return eval_batch_runner
+
+
+async def aobjective_function(params_dict):
+    """Async objective function for hyperparameter optimization."""
+    chunk_size = params_dict["chunk_size"]
+    docs = params_dict["docs"]
+    top_k = params_dict["top_k"]
+    eval_qs = params_dict["eval_qs"]
+    ref_response_strs = params_dict["ref_response_strs"]
+
+    # build index
+    index = _build_index(chunk_size, docs)
+
+    # query engine
+    query_engine = index.as_query_engine(similarity_top_k=top_k)
+
+    # get predicted responses
+    pred_response_objs = await aget_responses(
+        eval_qs, query_engine, show_progress=True
+    )
+
+    # run evaluator
+    eval_batch_runner = _get_eval_batch_runner()
+    eval_results = await eval_batch_runner.aevaluate_responses(
+        eval_qs, responses=pred_response_objs, reference=ref_response_strs  # type: ignore
+    )
+
+    # get semantic similarity metric
+    mean_score = np.array(
+        [r.score for r in eval_results["semantic_similarity"]]
+    ).mean()
+
+    return RunResult(score=mean_score, params=params_dict)
+
+
+async def main():
+    """Main async function to run hyperparameter optimization."""
+    print("="*60)
+    print("Starting ASYNC RAG Hyperparameter Optimization")
+    print("Using FREE HuggingFace Embeddings (No API key needed!)")
+    print("="*60)
+    
+    # Load documents
+    print("\nLoading documents...")
+    loader = PDFReader()
+    docs0 = loader.load_data(file=Path("./data/llama2.pdf"))
+    doc_text = "\n\n".join([d.get_content() for d in docs0])
+    docs = [Document(text=doc_text)]
+    print(f"✓ Loaded {len(docs0)} pages from PDF")
+    
+    # Load evaluation dataset
+    print("\nLoading evaluation dataset...")
+    eval_dataset = QueryResponseDataset.from_json(
+        "data/llama2_eval_qr_dataset.json"
+    )
+    eval_qs = eval_dataset.questions
+    ref_response_strs = [r for (_, r) in eval_dataset.qr_pairs]
+    print(f"✓ Loaded {len(eval_qs)} evaluation questions")
+    
+    # Define parameters
+    param_dict = {"chunk_size": [256, 512, 1024], "top_k": [1, 2, 5]}
+    # For quick testing, uncomment below:
+    # param_dict = {"chunk_size": [256], "top_k": [1]}
+    
+    fixed_param_dict = {
+        "docs": docs,
+        "eval_qs": eval_qs[:10],  # Using first 10 for speed
+        "ref_response_strs": ref_response_strs[:10],
+    }
+    
+    print(f"\nParameter combinations to test: {len(param_dict['chunk_size']) * len(param_dict['top_k'])}")
+    print(f"Chunk sizes: {param_dict['chunk_size']}")
+    print(f"Top-k values: {param_dict['top_k']}")
+    
+    # Run AsyncParamTuner
+    print("\n" + "="*60)
+    print("Running AsyncParamTuner (Async Grid Search)")
+    print("="*60)
+    
+    aparam_tuner = AsyncParamTuner(
+        aparam_fn=aobjective_function,
+        param_dict=param_dict,
+        fixed_param_dict=fixed_param_dict,
+        num_workers=2,
+        show_progress=True,
+    )
+
+    results = await aparam_tuner.atune()
+
+    # Display results
+    print("\n" + "="*60)
+    print("RESULTS - AsyncParamTuner")
+    print("="*60)
+    best_result = results.best_run_result
+    best_top_k = results.best_run_result.params["top_k"]
+    best_chunk_size = results.best_run_result.params["chunk_size"]
+    print(f"Best Score: {best_result.score:.4f}")
+    print(f"Best Top-k: {best_top_k}")
+    print(f"Best Chunk size: {best_chunk_size}")
+    
+    # Show all results
+    print("\nAll Results:")
+    for idx, run_result in enumerate(results.run_results):
+        print(f"  Run {idx}: score={run_result.score:.4f}, "
+              f"chunk_size={run_result.params['chunk_size']}, "
+              f"top_k={run_result.params['top_k']}")
+    
+    print("\n" + "="*60)
+    print("Async Optimization Complete!")
+    print("="*60)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
