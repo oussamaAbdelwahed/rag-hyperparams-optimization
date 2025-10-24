@@ -44,6 +44,7 @@ from llama_index.core.llms import MockLLM  # type: ignore
 import os
 import numpy as np
 from pathlib import Path
+import time
 
 
 # Helper Functions
@@ -76,8 +77,9 @@ def _get_eval_batch_runner():
     # Use free HuggingFace embedding model instead of OpenAI
     embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
     evaluator_s = SemanticSimilarityEvaluator(embed_model=embed_model)
+    # Increased workers from 2 to 4 for faster parallel evaluation
     eval_batch_runner = BatchEvalRunner(
-        {"semantic_similarity": evaluator_s}, workers=2, show_progress=True
+        {"semantic_similarity": evaluator_s}, workers=4, show_progress=False  # Disabled progress for speed
     )
 
     return eval_batch_runner
@@ -96,9 +98,9 @@ def objective_function(params_dict):
     # query engine
     query_engine = index.as_query_engine(similarity_top_k=top_k)
 
-    # get predicted responses
+    # get predicted responses - disabled progress bar for speed
     pred_response_objs = get_responses(
-        eval_qs, query_engine, show_progress=True
+        eval_qs, query_engine, show_progress=False
     )
 
     # run evaluator
@@ -108,16 +110,26 @@ def objective_function(params_dict):
         queries=eval_qs, responses=pred_response_objs, reference=ref_response_strs
     )
 
-    # get semantic similarity metric: basic evaluation: could use other score like F1@k ( wh)
+    # get semantic similarity metric: basic evaluation: could use other score like F1@k , MRR , ...
+    # TODO: try another eval metrics
+    # This metric 'semantic_similarity' seems to be an e2e evaluation score
+    # A recommended apporach https://developers.llamaindex.ai/python/framework/optimizing/evaluation/evaluation/ is to start by an e2e 
+    # eval and then , when identifying specific weaknesses/failures, to add more targeted/component specific evals / Component-Wise
     mean_score = np.array(
         [r.score for r in eval_results["semantic_similarity"]]
     ).mean()
+    
+    # Minimal logging for speed - only show final score
+    print(f"[chunk_size={chunk_size}, top_k={top_k}] Mean score: {mean_score:.4f}")
 
     return RunResult(score=mean_score, params=params_dict)
 
 
 def main():
     """Main function to run hyperparameter optimization."""
+    # Start overall timing
+    start_time_total = time.time()
+    
     print("="*60)
     print("Starting RAG Hyperparameter Optimization")
     print("Using FREE HuggingFace Models (No API key needed!)")
@@ -135,7 +147,7 @@ def main():
         model_name="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
         tokenizer_name="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
         context_window=2048,# must be bigger n i encountered one with 2090, put it at max as possible
-        max_new_tokens=256,
+        max_new_tokens=128,  # Reduced from 256 to 128 for faster generation
         generate_kwargs={"temperature": 0.7, "do_sample": True, "top_p": 0.95},
         device_map="auto",
     )
@@ -159,38 +171,47 @@ def main():
     ref_response_strs = [r for (_, r) in eval_dataset.qr_pairs]
     print(f"✓ Loaded {len(eval_qs)} evaluation questions")
     
-    # Define parameters
-    param_dict = {"chunk_size": [256, 512, 1024], "top_k": [1, 2, 5]}
-    # For quick testing, uncomment below:
-    # param_dict = {"chunk_size": [256], "top_k": [1]}
+    # Define parameters - optimized for demo (1-2 min runtime)
+    # Using: 1 chunk_size value × 2 top_k values = 2 combinations
+    # Testing on only 3 question-answer pairs
+    param_dict = {"chunk_size": [512], "top_k": [2, 5]}
     
     fixed_param_dict = {
         "docs": docs,
-        "eval_qs": eval_qs[:10],  # Using first 10 for speed
-        "ref_response_strs": ref_response_strs[:10],
+        "eval_qs": eval_qs[:3],  # Using first 3 for fast demo
+        "ref_response_strs": ref_response_strs[:3],  # Fixed: must match eval_qs length
     }
     
     print(f"\nParameter combinations to test: {len(param_dict['chunk_size']) * len(param_dict['top_k'])}")
     print(f"Chunk sizes: {param_dict['chunk_size']}")
     print(f"Top-k values: {param_dict['top_k']}")
+    print(f"Evaluation questions: {len(fixed_param_dict['eval_qs'])}")
     
     # Run ParamTuner
     print("\n" + "="*60)
     print("Running ParamTuner (Standard Grid Search)")
     print("="*60)
+    
+    # Start tuning timing
+    start_time_tuning = time.time()
+    
     param_tuner = ParamTuner(
         param_fn=objective_function,
         param_dict=param_dict,
         fixed_param_dict=fixed_param_dict,
-        show_progress=True,
+        show_progress=False,  # Disabled for speed - using custom logging instead
     )
     
     results = param_tuner.tune()
+    
+    # End tuning timing
+    tuning_duration = time.time() - start_time_tuning
     
     # Display results
     print("\n" + "="*60)
     print("RESULTS - Standard ParamTuner")
     print("="*60)
+    print(f"⏱️  Tuning Duration: {tuning_duration:.2f} seconds ({tuning_duration/60:.2f} minutes)")
     best_result = results.best_run_result
     best_top_k = results.best_run_result.params["top_k"]
     best_chunk_size = results.best_run_result.params["chunk_size"]
@@ -231,8 +252,13 @@ def main():
     except Exception as e:
         print(f"Note: RayTune optimization skipped: {e}")
     
+    # End overall timing
+    total_duration = time.time() - start_time_total
+    
     print("\n" + "="*60)
     print("Optimization Complete!")
+    print("="*60)
+    print(f"⏱️  Total Execution Time: {total_duration:.2f} seconds ({total_duration/60:.2f} minutes)")
     print("="*60)
 
 
