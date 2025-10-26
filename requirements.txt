@@ -1,0 +1,20 @@
+# Core dependencies
+llama-index
+llama-index-core
+llama-index-readers-file
+llama-index-llms-huggingface
+llama-index-embeddings-huggingface
+llama-index-experimental
+
+# Pinecone Vector Database
+pinecone-client>=3.0.0
+llama-index-vector-stores-pinecone
+
+# Environment variables
+python-dotenv
+
+# Additional dependencies
+nest-asyncio
+numpy
+torch
+transformers

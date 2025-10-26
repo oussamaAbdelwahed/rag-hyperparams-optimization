@@ -1,0 +1,135 @@
+python3 main_sync.py 
+/home/oussama-abdelwahed/DEV/ATS/AI/rag-hyperparams-optimization/venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'validate_default' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'validate_default' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+============================================================
+Starting RAG Hyperparameter Optimization
+Using FREE HuggingFace Models (No API key needed!)
+============================================================
+
+Configuring HuggingFace embedding model...
+2025-10-23 17:27:57,987 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 17:28:00,807 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+
+Configuring HuggingFace LLM (this may take a moment to download)...
+✓ Embedding model configured
+✓ HuggingFace LLM configured (TinyLlama-1.1B)
+
+Loading documents...
+✓ Loaded 77 pages from PDF
+
+Loading evaluation dataset...
+/home/oussama-abdelwahed/DEV/ATS/AI/rag-hyperparams-optimization/venv/lib/python3.12/site-packages/llama_index/core/evaluation/dataset_generation.py:110: DeprecationWarning: Call to deprecated class QueryResponseDataset. (Deprecated in favor of `LabelledRagDataset` which should be used instead.)
+  return cls(**data)
+✓ Loaded 60 evaluation questions
+
+Parameter combinations to test: 9
+Chunk sizes: [256, 512, 1024]
+Top-k values: [1, 2, 5]
+
+============================================================
+Running ParamTuner (Standard Grid Search)
+============================================================
+Param combinations.:   0%|                                                                                           | 0/9 [00:00<?, ?it/s]2025-10-23 17:28:16,113 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [10:28<00:00, 62.83s/it]
+2025-10-23 17:38:44,637 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [10:28<1:34:14, 628.31s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 17:38:47,999 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:00<00:00, 10.69it/s]
+Param combinations.:  11%|████████▉                                                                       | 1/9 [10:35<1:24:47, 635.91s/it]2025-10-23 17:38:49,488 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [11:13<00:00, 67.34s/it]
+2025-10-23 17:50:02,854 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [11:13<1:41:00, 673.35s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 17:50:05,758 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:01<00:00,  9.82it/s]
+Param combinations.:  22%|█████████████████▊                                                              | 2/9 [21:53<1:17:03, 660.57s/it]2025-10-23 17:50:07,029 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [12:39<00:00, 75.93s/it]
+2025-10-23 18:02:46,388 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [12:39<1:53:54, 759.35s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 18:02:49,656 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:01<00:00,  6.85it/s]
+Param combinations.:  33%|██████████████████████████▋                                                     | 3/9 [34:38<1:10:47, 707.96s/it]2025-10-23 18:02:54,805 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [13:56<00:00, 83.69s/it]
+2025-10-23 18:16:51,741 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [13:56<2:05:32, 836.91s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 18:16:54,815 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:01<00:00,  8.37it/s]
+Param combinations.:  44%|███████████████████████████████████▌                                            | 4/9 [48:42<1:03:30, 762.02s/it]2025-10-23 18:16:56,639 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [12:28<00:00, 74.88s/it]
+2025-10-23 18:29:25,493 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [12:28<1:52:19, 748.85s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 18:29:28,115 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:01<00:00,  7.07it/s]
+Param combinations.:  56%|████████████████████████████████████████████▍                                   | 5/9 [1:01:16<50:35, 758.95s/it]2025-10-23 18:29:29,784 - INFO - Loading all indices.
+Loading all indices.
+                                                                                                                                          Token indices sequence length is longer than the specified maximum sequence length for this model (2090 > 2048). Running this sequence through the model will result in indexing errors
+This is a friendly reminder - the current text generation call has exceeded the model's predefined maximum length (2048). Depending on the model, you may observe exceptions, performance degradation, or nothing at all.
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [24:02<00:00, 144.23s/it]
+2025-10-23 18:53:32,050 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5            | 1/10 [24:02<3:36:20, 1442.26s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 18:53:34,811 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:00<00:00, 10.51it/s]
+Param combinations.:  67%|█████████████████████████████████████████████████████▎                          | 6/9 [1:25:22<49:37, 992.63s/it]2025-10-23 18:53:38,194 - INFO - Loading all indices.
+Loading all indices.
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [10:53<00:00, 65.35s/it]
+2025-10-23 19:04:31,673 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5             | 1/10 [10:53<1:38:01, 653.46s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 19:04:34,522 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:00<00:00, 12.14it/s]
+Param combinations.:  78%|██████████████████████████████████████████████████████████████▏                 | 7/9 [1:36:22<29:27, 883.75s/it]2025-10-23 19:04:35,825 - INFO - Loading all indices.
+Loading all indices.
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [28:51<00:00, 173.18s/it]
+2025-10-23 19:33:27,626 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5            | 1/10 [28:51<4:19:46, 1731.79s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 19:33:30,373 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:02<00:00,  4.86it/s]
+Param combinations.:  89%|██████████████████████████████████████████████████████████████████████▏        | 8/9 [2:05:19<19:15, 1155.41s/it]2025-10-23 19:33:32,765 - INFO - Loading all indices.
+Loading all indices.
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [1:05:01<00:00, 390.12s/it]
+2025-10-23 20:38:33,954 - INFO - Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5          | 1/10 [1:05:01<9:45:10, 3901.18s/it]
+Load pretrained SentenceTransformer: BAAI/bge-small-en-v1.5
+2025-10-23 20:38:36,928 - INFO - 1 prompt is loaded, with the key: query
+1 prompt is loaded, with the key: query
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:01<00:00,  9.10it/s]
+Param combinations.: 100%|███████████████████████████████████████████████████████████████████████████████| 9/9 [3:10:24<00:00, 1269.44s/it]
+
+============================================================
+RESULTS - Standard ParamTuner
+============================================================
+Best Score: 0.9025
+Best Top-k: 2
+Best Chunk size: 256
+
+All Results:
+  Run 0: score=0.9025, chunk_size=256, top_k=2
+  Run 1: score=0.9001, chunk_size=256, top_k=5
+  Run 2: score=0.9000, chunk_size=1024, top_k=1
+  Run 3: score=0.8817, chunk_size=512, top_k=2
+  Run 4: score=0.8731, chunk_size=1024, top_k=2
+  Run 5: score=0.8711, chunk_size=512, top_k=1
+  Run 6: score=0.8708, chunk_size=256, top_k=1
+  Run 7: score=0.8615, chunk_size=512, top_k=5
+  Run 8: score=0.8011, chunk_size=1024, top_k=5
+
+============================================================
+Running RayTuneParamTuner (Advanced)
+============================================================
+Note: RayTune optimization skipped: No module named 'ray'
+
+============================================================
+Optimization Complete!
+============================================================

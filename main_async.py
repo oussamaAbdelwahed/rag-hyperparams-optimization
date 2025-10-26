@@ -7,8 +7,12 @@ import nest_asyncio
 import os
 import numpy as np
 from pathlib import Path
+from dotenv import load_dotenv
 
 nest_asyncio.apply()
+
+# Load environment variables
+load_dotenv()
 
 from llama_index.readers.file import PDFReader  # type: ignore
 from llama_index.core import Document
@@ -18,6 +22,8 @@ from llama_index.core import (
     load_index_from_storage,
     StorageContext,
 )
+from llama_index.vector_stores.pinecone import PineconeVectorStore  # type: ignore
+from pinecone import Pinecone, ServerlessSpec  # type: ignore
 from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.experimental.param_tuner import AsyncParamTuner  # type: ignore
 from llama_index.core.param_tuner.base import RunResult  # type: ignore
@@ -31,28 +37,55 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ign
 
 # Helper Functions
 
-def _build_index(chunk_size, docs):
-    """Build or load index with specified chunk size."""
-    index_out_path = f"./storage_{chunk_size}"
-    if not os.path.exists(index_out_path):
-        Path(index_out_path).mkdir(parents=True, exist_ok=True)
-        # parse docs
-        node_parser = SimpleNodeParser.from_defaults(chunk_size=chunk_size)
-        base_nodes = node_parser.get_nodes_from_documents(docs)
+def _get_pinecone_index_name(chunk_size):
+    """Get Pinecone index name based on chunk size."""
+    base_name = os.getenv("PINECONE_INDEX_BASE_NAME", "rag")
+    return f"{base_name}-chunk-{chunk_size}"
 
-        # build index
-        index = VectorStoreIndex(base_nodes)
-        # save index to disk
-        index.storage_context.persist(index_out_path)
-    else:
-        # rebuild storage context
-        storage_context = StorageContext.from_defaults(
-            persist_dir=index_out_path
+
+def _initialize_pinecone():
+    """Initialize Pinecone client."""
+    api_key = os.getenv("PINECONE_API_KEY")
+    if not api_key:
+        raise ValueError("PINECONE_API_KEY not found in environment variables")
+    
+    pc = Pinecone(api_key=api_key)
+    return pc
+
+
+def _build_index(chunk_size, docs):
+    """Build or load index with Pinecone vector store."""
+    # Initialize Pinecone
+    pc = _initialize_pinecone()
+    index_name = _get_pinecone_index_name(chunk_size)
+    
+    # Check if index exists, create if not
+    existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+    
+    if index_name not in existing_indexes:
+        print(f"Creating Pinecone index: {index_name}")
+        pc.create_index(
+            name=index_name,
+            dimension=384,  # BAAI/bge-small-en-v1.5 produces 384-dimensional embeddings
+            metric="cosine",
+            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
-        # load index
-        index = load_index_from_storage(
-            storage_context,
-        )
+        print(f"✓ Created index: {index_name}")
+    
+    # Initialize Pinecone vector store
+    pinecone_index = pc.Index(index_name)
+    vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
+    
+    # Create storage context with Pinecone
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    
+    # Parse docs and build index
+    node_parser = SimpleNodeParser.from_defaults(chunk_size=chunk_size)
+    base_nodes = node_parser.get_nodes_from_documents(docs)
+    
+    # Build index with Pinecone
+    index = VectorStoreIndex(base_nodes, storage_context=storage_context)
+    
     return index
 
 
