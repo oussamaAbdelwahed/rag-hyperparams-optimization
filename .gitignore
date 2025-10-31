@@ -234,3 +234,7 @@ api_keys.txt
 .transformers_cache/
 .torch/
 .huggingface/
+
+optimization_results.json
+Spec détaillées - Middleware XL EDS (ATS __ XL EDS __ CHRONOPOST).docx
+eval_dataset_chrono.json
