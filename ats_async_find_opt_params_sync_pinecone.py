@@ -30,13 +30,13 @@ from pinecone import Pinecone, ServerlessSpec  # type: ignore
 from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.experimental.param_tuner import AsyncParamTuner  # type: ignore
 from llama_index.experimental.param_tuner.base import RunResult  # type: ignore
-from llama_index.core.evaluation.eval_utils import aget_responses
 from llama_index.core.evaluation import (
     SemanticSimilarityEvaluator,
     BatchEvalRunner,
 )
+from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
-from llama_index.llms.huggingface import HuggingFaceLLM  # type: ignore
+from llama_index.llms.ollama import Ollama  # type: ignore
 from llama_index.core import Settings  # type: ignore
 
 
@@ -140,11 +140,11 @@ def _get_eval_batch_runner():
     """Get evaluation batch runner."""
     # Use free HuggingFace embedding model instead of OpenAI
     # embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-mpnet-base-v2")
+    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
     evaluator_s = SemanticSimilarityEvaluator(embed_model=embed_model)
     eval_batch_runner = BatchEvalRunner(
-        {"semantic_similarity": evaluator_s}, workers=2, show_progress=True
+        {"semantic_similarity": evaluator_s}, workers=1, show_progress=True  # Reduced to 1 worker
     )
     return eval_batch_runner
 
@@ -156,37 +156,68 @@ async def aobjective_function(params_dict):
     top_k = params_dict["top_k"]
     eval_qs = params_dict["eval_qs"]
     ref_response_strs = params_dict["ref_response_strs"]
+    similarity_cutoff = params_dict.get("similarity_cutoff", 0.7)  # Default: 0.7
 
-    print(f"\n🔍 Testing: chunk_size={chunk_size}, top_k={top_k}")
+    print(f"\n🔍 Testing: chunk_size={chunk_size}, top_k={top_k}, similarity_cutoff={similarity_cutoff}")
     
     # build index
     index = _build_index(chunk_size, docs)
 
-    # query engine with timeout
+    # Create similarity postprocessor to filter low-quality retrieval results
+    # Cosine similarity threshold of 0.7 is state-of-the-art for RAG systems
+    # - Values above 0.7: High semantic relevance
+    # - Values 0.5-0.7: Moderate relevance (can introduce noise)
+    # - Values below 0.5: Low relevance (should be filtered out)
+    similarity_processor = SimilarityPostprocessor(similarity_cutoff=similarity_cutoff)
+    
+    # query engine with similarity filtering
     query_engine = index.as_query_engine(
         similarity_top_k=top_k,
+        node_postprocessors=[similarity_processor],
        # response_mode="compact",  # More efficient response mode
     )
 
     # Add small delay to avoid rate limiting
-    await asyncio.sleep(1)
+    # await asyncio.sleep(1)
     
-    # get predicted responses with retry logic
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            pred_response_objs = await aget_responses(
-                eval_qs, query_engine, show_progress=True
-            )
-            break
-        except Exception as e:
-            if attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 5  # 5, 10, 15 seconds
-                print(f"⚠️  Attempt {attempt + 1} failed: {str(e)[:100]}. Retrying in {wait_time}s...")
-                await asyncio.sleep(wait_time)
-            else:
-                print(f"❌ All {max_retries} attempts failed for chunk_size={chunk_size}, top_k={top_k}")
-                raise
+    # Process queries ONE AT A TIME - no parallel processing
+    # This ensures Ollama handles only 1 request at a time and can take as long as needed
+    print(f"   Processing {len(eval_qs)} queries sequentially (1 at a time)...")
+    pred_response_objs = []
+    
+    for idx, query in enumerate(eval_qs, 1):
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                print(f"\n   [{idx}/{len(eval_qs)}] Querying: {query[:60]}...")
+                response = await query_engine.aquery(query)
+                
+                # Log retrieved text chunks from Pinecone
+                if hasattr(response, 'source_nodes') and response.source_nodes:
+                    print(f"   📄 Retrieved {len(response.source_nodes)} chunks from Pinecone:")
+                    for node_idx, source_node in enumerate(response.source_nodes, 1):
+                        # Get the actual text content from the node
+                        node_text = source_node.node.get_content()
+                        # Get similarity score if available
+                        score = source_node.score if hasattr(source_node, 'score') else 'N/A'
+                        print(f"      Chunk {node_idx} (score: {score}):")
+                        # Display first 200 characters of the chunk
+                        print(f"      {node_text[:200]}...")
+                        print(f"      [Full length: {len(node_text)} chars]")
+                else:
+                    print(f"   ⚠️  No source nodes retrieved")
+                
+                pred_response_objs.append(response)
+                print(f"   ✓ [{idx}/{len(eval_qs)}] Response received\n")
+                break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 10  # 10, 20, 30 seconds
+                    print(f"   ⚠️  Attempt {attempt + 1} failed: {str(e)[:100]}. Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    print(f"   ❌ All {max_retries} attempts failed for query {idx}")
+                    raise
 
     # run evaluator
     eval_batch_runner = _get_eval_batch_runner()
@@ -224,33 +255,48 @@ async def main():
     
     print("="*60)
     print("Starting ASYNC RAG Hyperparameter Optimization")
-    print("Using FREE HuggingFace Embeddings (No API key needed!)")
+    print("Using OpenAI GPT API + FREE HuggingFace Embeddings")
     print("="*60)
     
     # Configure to use HuggingFace embedding model globally
     print("\nConfiguring HuggingFace embedding model...")
     # Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    Settings.embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-mpnet-base-v2")
-
+    # this is the embedder used in ATS proj: BAAI/bge-base-en-v1.5 with following config /instance
+    embed_model = HuggingFaceEmbedding(
+        model_name="BAAI/bge-base-en-v1.5",  # 768 dimensions - matches Pinecone index
+        device="cpu",
+        trust_remote_code=True,
+    )
+    Settings.embed_model = embed_model
     print("✓ Embedding model configured")
     
-    # Configure HuggingFace LLM with longer context window
-    print("\nConfiguring HuggingFace LLM (this may take a moment to download)...")
-    Settings.llm = HuggingFaceLLM(
-        model_name="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        tokenizer_name="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        context_window=2048,  # Increased from 2048 to 4096
-        max_new_tokens=256,
-        generate_kwargs={"temperature": 0.7, "do_sample": True, "top_p": 0.95},
-        device_map="auto",
-        model_kwargs={"max_length": 4096}  # Set max length in model kwargs
+    # Configure Ollama LLM (free, unlimited, local via Docker)
+    print("\nConfiguring Ollama LLM...")
+    
+    # Using qwen2.5:0.5b - Extremely lightweight (400MB), free, unlimited local inference via Docker
+    # Connect to Ollama running in Docker container on localhost:11434
+    # Timeout set to 600s (10 minutes) to allow slow CPU inference
+    # CRITICAL: Set additional_kwargs={"stream": False} to disable streaming
+    Settings.llm = Ollama(
+        model="qwen2.5:0.5b",
+        base_url="http://localhost:11434",
+        request_timeout=600.0,  # 10 minutes - allow slow CPU inference
+        temperature=0.7,
+        additional_kwargs={"stream": False},  # Disable streaming - wait for complete response
     )
-    print("✓ HuggingFace LLM configured (TinyLlama-1.1B with 4096 context)")
+    print("✓ Ollama LLM configured (qwen2.5:0.5b on Docker, 600s timeout, streaming disabled)")
     
     # Define parameters first to check indexes
-    param_dict = {"chunk_size": [256, 512, 1024], "top_k": [3, 5, 7]}
+    param_dict = {"chunk_size": [256, 512 ], "top_k": [3, 5]}
     # For quick testing, uncomment below:
     # param_dict = {"chunk_size": [256], "top_k": [1]}
+    
+    # Similarity cutoff threshold for filtering retrieved documents
+    # State-of-the-art threshold: 0.7 (based on cosine similarity research)
+    # - 0.7-1.0: Strong semantic match (recommended)
+    # - 0.5-0.7: Moderate match (may introduce noise)
+    # - 0.0-0.5: Weak match (should be filtered)
+    similarity_cutoff = 0.5  
     
     # Check which indexes are already populated
     print("\nChecking Pinecone indexes...")
@@ -295,6 +341,7 @@ async def main():
         "docs": docs,
         "eval_qs": eval_qs,  # Using ALL questions
         "ref_response_strs": ref_response_strs,
+        "similarity_cutoff": similarity_cutoff,  # Cosine similarity threshold
     }
     
     print(f"\nParameter combinations to test: {len(param_dict['chunk_size']) * len(param_dict['top_k'])}")
@@ -364,8 +411,11 @@ async def main():
         "execution_info": {
             "tuning_duration_seconds": round(tuning_duration, 2),
             "total_duration_seconds": round(total_duration, 2),
-            "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+            "llm_model": "qwen2.5:0.5b",
+            "llm_provider": "ollama-docker",
+            "embedding_model": "BAAI/bge-small-en-v1.5",
             "embedding_dimension": 768,
+            "similarity_cutoff": similarity_cutoff,
             "eval_questions_count": num_eval_questions,
             "total_questions_available": len(eval_qs),
             "document": "Spec détaillées - Middleware XL EDS (ATS __ XL EDS __ CHRONOPOST).docx"
