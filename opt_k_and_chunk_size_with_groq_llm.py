@@ -89,8 +89,8 @@ def _setup_groq_llm():
     
     # Use Mixtral - high quality model with good reasoning
     llm = Groq(
-        # model="mixtral-8x7b-32768",
-        model="llama-3.3-70b-versatile",
+        # model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
         api_key=api_key,
         # temperature=0.7,
         # max_tokens=1024,
@@ -132,7 +132,7 @@ async def main():
     PINECONE_INDEX_NAME = "ats-chrono-rag-hyperparams-optim-chunk-256"
     TOP_K = 5
     SIMILARITY_CUTOFF = 0.5
-    QUERY_DELAY = 15  # 15 seconds between queries
+    QUERY_DELAY = 12  # 15 seconds between queries
     
     print(f"\n🔧 Configuration:")
     print(f"   Index: {PINECONE_INDEX_NAME}")
@@ -181,6 +181,7 @@ async def main():
     print("="*70 + "\n")
     
     pred_response_objs = []
+    generated_answers = []  # Store LLM-generated answers
     
     for idx, query in enumerate(eval_qs, 1):
         try:
@@ -189,6 +190,10 @@ async def main():
             # Query with RAG
             response = query_engine.query(query)
             pred_response_objs.append(response)
+            
+            # Extract and store the LLM-generated answer
+            answer_text = str(response)
+            generated_answers.append(answer_text)
             
             # Display retrieved chunks
             if hasattr(response, 'source_nodes') and response.source_nodes:
@@ -276,6 +281,7 @@ async def main():
             {
                 "question_idx": idx,
                 "question": eval_qs[idx],
+                "llm_answer": generated_answers[idx],  # Add LLM-generated answer
                 "score": float(score),
             }
             for idx, score in enumerate(semantic_scores)

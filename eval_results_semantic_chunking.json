@@ -1,0 +1,223 @@
+{
+  "timestamp": "2025-11-03T16:16:29.556642",
+  "configuration": {
+    "source_document": "Spec détaillées - Middleware XL EDS (ATS __ XL EDS __ CHRONOPOST).docx",
+    "semantic_chunks_count": 289,
+    "pinecone_index": "ats-chrono-semantic-chunking-index",
+    "top_k": 5,
+    "similarity_cutoff": 0.5,
+    "query_delay_seconds": 30,
+    "llm_model": "llama-3.3-70b-versatile",
+    "llm_provider": "groq",
+    "embedding_model": "BAAI/bge-base-en-v1.5",
+    "chunking_strategy": "semantic"
+  },
+  "results": {
+    "mean_score": 0.71410404075811,
+    "min_score": 0.4953748904272748,
+    "max_score": 1.0,
+    "std_dev": 0.11113754727680639,
+    "total_questions": 39
+  },
+  "individual_scores": [
+    {
+      "question_idx": 0,
+      "question": "Pour qu'une commande puisse être replanifiée, dans quels statuts doit-elle être ?",
+      "score": 0.8149814390252907
+    },
+    {
+      "question_idx": 1,
+      "question": "Quelle grille tarifaire est utilisée dans le cas d'une replanification suite à un échec dont XL EDS est responsable ?",
+      "score": 0.7951520102046995
+    },
+    {
+      "question_idx": 2,
+      "question": "Quand une commande est annulée par XL EDS, est-ce qu'elle facturable ?",
+      "score": 0.5805124485881766
+    },
+    {
+      "question_idx": 3,
+      "question": "Est-ce que le bonus électrique est calculé dans le cas d'une modification de commande",
+      "score": 0.5530894617303868
+    },
+    {
+      "question_idx": 4,
+      "question": "Quelles sont les modifications de commande autorisées avant Cut off ?",
+      "score": 0.8029231704123204
+    },
+    {
+      "question_idx": 5,
+      "question": "Quelle est la formule pour calculer le prix de base ?",
+      "score": 0.779167640107878
+    },
+    {
+      "question_idx": 6,
+      "question": "Quand est-ce que la compétences two man est ajoutée à une commande ?",
+      "score": 0.6307210798289921
+    },
+    {
+      "question_idx": 7,
+      "question": "Quelles sont les différentes actions/étapes qui sont réalisées par le middleware pour la création d'un commande ? \n(étapes permettant d'aboutir à la création de commande dans le middleware et l'envoi à Urbantz)",
+      "score": 0.7556662805841128
+    },
+    {
+      "question_idx": 8,
+      "question": "Pour l'intégration de Woop dans le middleware, quels sont les flux de données sortant à intégrer ?",
+      "score": 0.6109766759640667
+    },
+    {
+      "question_idx": 9,
+      "question": "Dans le mapping Woop, standard API, quelle est la donnée Woop qui correspond à l'attribut Items de la standard API ?",
+      "score": 0.6421002832034456
+    },
+    {
+      "question_idx": 10,
+      "question": "Dans le mapping Woop, standard API, quelle est la donnée Woop qui correspond à l'attribut Magasin de la standard API ?",
+      "score": 0.528662919241405
+    },
+    {
+      "question_idx": 11,
+      "question": "Selon les spécifications du back-office, combien de temps un \"toaster\" de succès reste-t-il affiché à l'écran après une action réussie ?",
+      "score": 1.0
+    },
+    {
+      "question_idx": 12,
+      "question": "Pour une commande de type \"Distribution simple\", quel type de tâche est annoncé sur la plateforme Urbantz ?",
+      "score": 0.7028944269089725
+    },
+    {
+      "question_idx": 13,
+      "question": "A partir de quel événement une commande ne peut plus être annulée ?",
+      "score": 0.66902214513112
+    },
+    {
+      "question_idx": 14,
+      "question": "Lors de l'intégration avec WOOP, comment le service additionnel \"Passage à 4\" est-il interprété par le middleware pour la Standard API ?",
+      "score": 0.660364951854161
+    },
+    {
+      "question_idx": 15,
+      "question": "Pour Centiro, Quels sont les flux de création de commandes provenant de Centiro via EDI ?",
+      "score": 0.7403563873103313
+    },
+    {
+      "question_idx": 16,
+      "question": "Quelle information complémentaire contient le flux EDI2 ?",
+      "score": 0.7966062564358308
+    },
+    {
+      "question_idx": 17,
+      "question": "Dans le back-office, quel est le seul rôle autorisé à créer un nouvel \"utilisateur XL EDS\" ?",
+      "score": 0.585322981350951
+    },
+    {
+      "question_idx": 18,
+      "question": "Quelle(s) condition(s) doi(ven)t être remplie(s) pour que le bouton \"S'impersonnifier\" soit actif sur la fiche d'un utilisateur Portail ?",
+      "score": 0.8202457359299423
+    },
+    {
+      "question_idx": 19,
+      "question": "Pour le calcul de la surcharge, sur quel prix s'applique le pourcentage de surcharge ?",
+      "score": 0.7085123296690767
+    },
+    {
+      "question_idx": 20,
+      "question": "Quand est calculé le prix de la surcharge ?",
+      "score": 0.7580003926230228
+    },
+    {
+      "question_idx": 21,
+      "question": "Quelles sont les conditions pour calculer une surcharge de la commande ?",
+      "score": 0.7294008544702894
+    },
+    {
+      "question_idx": 22,
+      "question": "Est-ce que la surcharge est calculée dans le cadre d'une annulation tardive ?",
+      "score": 0.4953748904272748
+    },
+    {
+      "question_idx": 23,
+      "question": "De quel mois est pris l'indice CNR pour le calcul de la surcharge des commandes livrées au cours du mois M ?",
+      "score": 0.9284108488743315
+    },
+    {
+      "question_idx": 24,
+      "question": "Sur le portail de commande, quelle est la période maximale disponible dans le calendrier pour sélectionner une date de livraison ?",
+      "score": 0.7877147801325401
+    },
+    {
+      "question_idx": 25,
+      "question": "Pour une commande de \"Retour marchandise\" gérée via CENTIRO, quel est le code et le statut Centiro est envoyé lorsque le statut dans le middleware passe à \"Chargement validé\" ?",
+      "score": 0.5855417003496468
+    },
+    {
+      "question_idx": 26,
+      "question": "Lors de la création d'une grille tarifaire, si la dimension \"Zone géographique\" est sélectionnée, quelle action est impérative pour pouvoir passer à l'étape \"Tarification\" ?",
+      "score": 0.719054667937156
+    },
+    {
+      "question_idx": 27,
+      "question": "Lorsqu'une commande de distribution simple nécessite une récupération des colis à une adresse différente de l'adresse principale du magasin, comment cela est-il annoncé sur Urbantz ?",
+      "score": 0.6218006552024229
+    },
+    {
+      "question_idx": 28,
+      "question": "Quel est le premier contrôle effectué par le middleware lors de la réception d'une demande de création de commande via la Standard API ?",
+      "score": 0.7221790643031412
+    },
+    {
+      "question_idx": 29,
+      "question": "Selon les règles de la Standard API, dans quel cas la compétence \"four_men\" est-elle automatiquement attribuée à une commande ?",
+      "score": 0.6351634099595814
+    },
+    {
+      "question_idx": 30,
+      "question": "Comment le middleware qualifie-t-il une annulation demandée par un client après le Cut Off mais avant le chargement effectif de la commande ?",
+      "score": 0.7844418370374875
+    },
+    {
+      "question_idx": 31,
+      "question": "Est-ce qu'une annulation client tardive entraîne une valorisation et une facturation du client ?",
+      "score": 0.887335593543039
+    },
+    {
+      "question_idx": 32,
+      "question": "Dans le cadre de l'intégration avec WOOP, quel service WOOP entrant est interprété par le middleware comme une commande de type \"Retour marchandise\" (Pickup) ?",
+      "score": 0.5940360854815068
+    },
+    {
+      "question_idx": 33,
+      "question": "Comment le middleware et le serveur SFTP gère-t-il un fichier EDI de création de commande envoyé par CENTIRO qui est accepté et validé ?",
+      "score": 0.6663374905186735
+    },
+    {
+      "question_idx": 34,
+      "question": "Dans quel menu de listing des commandes du back-office se trouve une commande dont le statut est \"Chargement validé\" ?",
+      "score": 0.6969559566361383
+    },
+    {
+      "question_idx": 35,
+      "question": "Lorsqu'une grille tarifaire est modifiée en mode \"Draft\", quel changement dans l'onglet \"Informations générales\" entraîne une réinitialisation complète des données de l'onglet \"Tarification\" ?",
+      "score": 0.6466610622345021
+    },
+    {
+      "question_idx": 36,
+      "question": "Quel est le mécanisme qui déclenche l'alerte de type \"Indice CNR (M-1) manquant\" ?",
+      "score": 0.8526994637829389
+    },
+    {
+      "question_idx": 37,
+      "question": "En fonction de quelle dimension est calculé le prix point relais sous-traitant ?",
+      "score": 0.853951179500853
+    },
+    {
+      "question_idx": 38,
+      "question": "Quel est le premier événement qui génère un calcul du bonus électrique ?",
+      "score": 0.7077190330705823
+    }
+  ],
+  "execution_info": {
+    "duration_seconds": 2301.24,
+    "duration_minutes": 38.35
+  }
+}
