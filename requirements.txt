@@ -2,6 +2,7 @@
 llama-index
 llama-index-core
 llama-index-readers-file
+llama-index-readers-preprocess
 llama-index-llms-ollama
 llama-index-llms-groq
 llama-index-embeddings-huggingface

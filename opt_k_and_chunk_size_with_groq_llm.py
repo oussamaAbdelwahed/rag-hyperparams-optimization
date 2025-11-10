@@ -132,7 +132,7 @@ async def main():
     PINECONE_INDEX_NAME = "ats-chrono-rag-hyperparams-optim-chunk-256"
     TOP_K = 5
     SIMILARITY_CUTOFF = 0.5
-    QUERY_DELAY = 12  # 15 seconds between queries
+    QUERY_DELAY = 10  # 10 seconds between queries
     
     print(f"\n🔧 Configuration:")
     print(f"   Index: {PINECONE_INDEX_NAME}")
@@ -182,6 +182,7 @@ async def main():
     
     pred_response_objs = []
     generated_answers = []  # Store LLM-generated answers
+    retrieved_chunks_list = []  # Store retrieved chunks for each question
     
     for idx, query in enumerate(eval_qs, 1):
         try:
@@ -195,15 +196,23 @@ async def main():
             answer_text = str(response)
             generated_answers.append(answer_text)
             
-            # Display retrieved chunks
+            # Extract and store retrieved chunks
+            chunks_for_question = []
             if hasattr(response, 'source_nodes') and response.source_nodes:
                 print(f"   📄 Retrieved {len(response.source_nodes)} chunks:")
                 for node_idx, source_node in enumerate(response.source_nodes, 1):
                     node_text = source_node.node.get_content()
                     score = source_node.score if hasattr(source_node, 'score') else 'N/A'
+                    chunks_for_question.append({
+                        "chunk_index": node_idx,
+                        "text": node_text,
+                        "score": float(score) if isinstance(score, (int, float)) else score,
+                    })
                     print(f"      Chunk {node_idx} (score: {score}): {node_text[:100]}...")
             else:
                 print(f"   ⚠️  No source nodes retrieved")
+            
+            retrieved_chunks_list.append(chunks_for_question)
             
             print(f"   ✓ Response received\n")
             
@@ -283,6 +292,7 @@ async def main():
                 "question": eval_qs[idx],
                 "llm_answer": generated_answers[idx],  # Add LLM-generated answer
                 "score": float(score),
+                "retrievedChunks": retrieved_chunks_list[idx],
             }
             for idx, score in enumerate(semantic_scores)
         ],
