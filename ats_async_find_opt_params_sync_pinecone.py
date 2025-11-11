@@ -139,8 +139,8 @@ def _build_index(chunk_size, docs):
 def _get_eval_batch_runner():
     """Get evaluation batch runner."""
     # Use free HuggingFace embedding model instead of OpenAI
-    # embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    # embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
+    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
 
     evaluator_s = SemanticSimilarityEvaluator(embed_model=embed_model)
     eval_batch_runner = BatchEvalRunner(
@@ -260,7 +260,7 @@ async def main():
     
     # Configure to use HuggingFace embedding model globally
     print("\nConfiguring HuggingFace embedding model...")
-    # Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    # Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     # this is the embedder used in ATS proj: BAAI/bge-base-en-v1.5 with following config /instance
     embed_model = HuggingFaceEmbedding(
         model_name="BAAI/bge-base-en-v1.5",  # 768 dimensions - matches Pinecone index
@@ -413,7 +413,7 @@ async def main():
             "total_duration_seconds": round(total_duration, 2),
             "llm_model": "qwen2.5:0.5b",
             "llm_provider": "ollama-docker",
-            "embedding_model": "BAAI/bge-small-en-v1.5",
+            "embedding_model": "BAAI/bge-base-en-v1.5",
             "embedding_dimension": 768,
             "similarity_cutoff": similarity_cutoff,
             "eval_questions_count": num_eval_questions,

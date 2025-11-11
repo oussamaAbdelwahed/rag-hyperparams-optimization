@@ -100,7 +100,7 @@ def _build_index(chunk_size, docs):
             print(f"Creating Pinecone index: {index_name}")
             pc.create_index(
                 name=index_name,
-                dimension=384,  # BAAI/bge-small-en-v1.5 produces 384-dimensional embeddings
+                dimension=384,  # BAAI/bge-base-en-v1.5 produces 384-dimensional embeddings
                 metric="cosine",
                 spec=ServerlessSpec(cloud="aws", region="us-east-1"),
             )
@@ -132,7 +132,7 @@ def _build_index(chunk_size, docs):
 def _get_eval_batch_runner():
     """Get evaluation batch runner."""
     # Use free HuggingFace embedding model instead of OpenAI
-    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     evaluator_s = SemanticSimilarityEvaluator(embed_model=embed_model)
     eval_batch_runner = BatchEvalRunner(
         {"semantic_similarity": evaluator_s}, workers=2, show_progress=True
@@ -185,7 +185,7 @@ async def main():
     
     # Configure to use HuggingFace embedding model globally
     print("\nConfiguring HuggingFace embedding model...")
-    Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
     print("✓ Embedding model configured")
     
     # Configure HuggingFace LLM - using a small, efficient model

@@ -8,6 +8,10 @@ llama-index-llms-groq
 llama-index-embeddings-huggingface
 llama-index-experimental
 
+# Docling integration for advanced document processing
+llama-index-readers-docling
+llama-index-node-parser-docling
+
 # Pinecone Vector Database
 pinecone-client>=3.0.0
 llama-index-vector-stores-pinecone

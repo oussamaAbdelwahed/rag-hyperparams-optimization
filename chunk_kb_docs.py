@@ -46,7 +46,7 @@ def initialize_pinecone():
         print(f"Creating new index: {INDEX_NAME}")
         pc.create_index(
             name=INDEX_NAME,
-            dimension=384,  # Dimension for BAAI/bge-small-en-v1.5 embeddings
+            dimension=384,  # Dimension for BAAI/bge-base-en-v1.5 embeddings
             metric="cosine",
             spec=ServerlessSpec(
                 cloud="aws",
@@ -165,7 +165,7 @@ def chunk_and_store_documents(documents, pinecone_index):
     
     # Initialize embedding model
     embed_model = HuggingFaceEmbedding(
-        model_name="BAAI/bge-small-en-v1.5"
+        model_name="BAAI/bge-base-en-v1.5"
     )
     
     # Create vector store
