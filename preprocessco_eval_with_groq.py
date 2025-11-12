@@ -17,6 +17,7 @@ import json
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
+import openai
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +39,16 @@ from llama_index.core.evaluation import (
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.prompts import PromptTemplate
 import numpy as np
+
+# Global state for API key rotation
+GROQ_API_KEYS = [
+    os.getenv("GROQ_API_KEY_1"),
+    os.getenv("GROQ_API_KEY_2"),
+    os.getenv("GROQ_API_KEY_3"),
+    os.getenv("GROQ_API_KEY_4"),
+]
+GROQ_API_KEYS = [key for key in GROQ_API_KEYS if key]  # Filter out None values
+CURRENT_API_KEY_INDEX = 0
 
 
 # System prompt for software specifications
@@ -106,9 +117,12 @@ def _load_index(index_name):
 
 def _setup_groq_llm():
     """Configure Groq LLM with system prompt for software specifications."""
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment variables")
+    global CURRENT_API_KEY_INDEX
+    
+    if not GROQ_API_KEYS:
+        raise ValueError("No GROQ API keys found in environment variables")
+    
+    api_key = GROQ_API_KEYS[CURRENT_API_KEY_INDEX]
     
     # Use high-quality model with strict system prompt
     llm = Groq(
@@ -122,7 +136,43 @@ def _setup_groq_llm():
     print(f"   Model: llama-3.3-70b-versatile")
     print(f"   Temperature: 0.1 (low for factual accuracy)")
     print(f"   System Prompt: Activated (balanced mode)")
+    print(f"   Using API Key #{CURRENT_API_KEY_INDEX + 1} of {len(GROQ_API_KEYS)}")
     return llm
+
+
+def _switch_to_next_groq_api_key():
+    """Switch to the next Groq API key and reinitialize the LLM."""
+    global CURRENT_API_KEY_INDEX
+    
+    CURRENT_API_KEY_INDEX = (CURRENT_API_KEY_INDEX + 1) % len(GROQ_API_KEYS)
+    
+    print(f"\n🔄 Switching to API Key #{CURRENT_API_KEY_INDEX + 1}")
+    
+    llm = _setup_groq_llm()
+    Settings.llm = llm
+    
+    return llm
+
+
+def _is_rate_limit_error(error):
+    """Check if the error is a rate limit error from Groq."""
+    # Check for openai.RateLimitError exception type
+    error_type = type(error).__name__
+    if error_type == "RateLimitError":
+        return True
+    
+    # Also check error message content
+    error_str = str(error).lower()
+    return any(phrase in error_str for phrase in [
+        "rate limit",
+        "rate_limit",
+        "too many requests",
+        "quota exceeded",
+        "429",
+        "limit exceeded",
+        "rate_limit_exceeded",
+        "tokens per day"
+    ])
 
 
 def _setup_embedding():
@@ -156,9 +206,13 @@ async def main():
     
     # Configuration
     PINECONE_INDEX_NAME = "preprocess-tool-chuning-ats-chrono"
-    TOP_K = 7
+    #info: some question got chunk at position 20 (score: 0.619): 
+    # info:       Chunk 30 (score: 0.609): Formule de calcul pour la détermination du "Prix Point relais" :
+    # info using TOP_K 20, 30: we are experiencing a significant latency and execcd the groq Token per xxx rate limit 
+    # TODO: we need a reranker and a context synthestization
+    TOP_K = 10
     SIMILARITY_CUTOFF = 0.5
-    QUERY_DELAY = 10  # 10 seconds between queries
+    QUERY_DELAY = 11  # 11 seconds between queries
     
     print(f"\n🔧 Configuration:")
     print(f"   Index: {PINECONE_INDEX_NAME}")
@@ -210,53 +264,111 @@ async def main():
     pred_response_objs = []
     generated_answers = []  # Store LLM-generated answers
     retrieved_chunks_list = []  # Store retrieved chunks for each question
+    api_keys_used = set()  # Track which API keys were used
     
     for idx, query in enumerate(eval_qs, 1):
-        try:
-            print(f"[{idx}/{len(eval_qs)}] Query: {query[:60]}...")
-            
-            # Query with RAG
-            response = query_engine.query(query)
-            pred_response_objs.append(response)
-            
-            # Extract and store the LLM-generated answer
-            answer_text = str(response)
-            generated_answers.append(answer_text)
-            
-            # Extract and store retrieved chunks
-            chunks_for_question = []
-            if hasattr(response, 'source_nodes') and response.source_nodes:
-                print(f"   📄 Retrieved {len(response.source_nodes)} chunks:")
-                for node_idx, source_node in enumerate(response.source_nodes, 1):
-                    node_text = source_node.node.get_content()
-                    score = source_node.score if hasattr(source_node, 'score') else 'N/A'
-                    chunks_for_question.append({
-                        "chunk_index": node_idx,
-                        "text": node_text,
-                        "score": float(score) if isinstance(score, (int, float)) else score,
-                    })
-                    print(f"      Chunk {node_idx} (score: {score:.3f}): {node_text[:80]}...")
-            else:
-                print(f"   ⚠️  No source nodes retrieved")
-            
-            retrieved_chunks_list.append(chunks_for_question)
-            
-            # Show answer preview
-            answer_preview = answer_text[:150] + "..." if len(answer_text) > 150 else answer_text
-            print(f"   💬 Answer: {answer_preview}")
-            print(f"   ✓ Response received\n")
-            
-            # Delay between queries
-            if idx < len(eval_qs):
-                print(f"   ⏳ Waiting {QUERY_DELAY}s before next query...")
-                for remaining in range(QUERY_DELAY, 0, -1):
-                    print(f"      {remaining}s remaining...", end='\r')
-                    time.sleep(1)
-                print(f"   ✓ Ready for next query\n")
-            
-        except Exception as e:
-            print(f"   ❌ Error: {str(e)[:100]}\n")
-            raise
+        max_retries = len(GROQ_API_KEYS)
+        retry_count = 0
+        response = None
+        
+        while retry_count < max_retries:
+            try:
+                print(f"[{idx}/{len(eval_qs)}] Query: {query[:60]}...")
+                
+                # Query with RAG
+                response = query_engine.query(query)
+                
+                # Track which API key was used for this successful query
+                api_keys_used.add(CURRENT_API_KEY_INDEX + 1)
+                
+                # If we got here, the query was successful - break out of retry loop
+                break
+                
+            except openai.RateLimitError as e:
+                retry_count += 1
+                print(f"   ⚠️  Rate limit hit on API Key #{CURRENT_API_KEY_INDEX + 1}")
+                
+                if retry_count < max_retries:
+                    print(f"   🔄 Switching to next API key (attempt {retry_count + 1}/{max_retries})...")
+                    _switch_to_next_groq_api_key()
+                    
+                    # Recreate query engine with new LLM
+                    query_engine = index.as_query_engine(
+                        similarity_top_k=TOP_K,
+                        node_postprocessors=[similarity_processor],
+                    )
+                    
+                    print(f"   ⏳ Waiting 5 seconds before retry...")
+                    time.sleep(5)
+                else:
+                    print(f"   ❌ All API keys exhausted. Cannot continue.")
+                    raise Exception(f"All {max_retries} Groq API keys have hit rate limits") from e
+                    
+            except Exception as e:
+                if _is_rate_limit_error(e):
+                    retry_count += 1
+                    print(f"   ⚠️  Rate limit hit on API Key #{CURRENT_API_KEY_INDEX + 1}")
+                    
+                    if retry_count < max_retries:
+                        print(f"   🔄 Switching to next API key (attempt {retry_count + 1}/{max_retries})...")
+                        _switch_to_next_groq_api_key()
+                        
+                        # Recreate query engine with new LLM
+                        query_engine = index.as_query_engine(
+                            similarity_top_k=TOP_K,
+                            node_postprocessors=[similarity_processor],
+                        )
+                        
+                        print(f"   ⏳ Waiting 5 seconds before retry...")
+                        time.sleep(5)
+                    else:
+                        print(f"   ❌ All API keys exhausted. Cannot continue.")
+                        raise Exception(f"All {max_retries} Groq API keys have hit rate limits") from e
+                else:
+                    # Non-rate-limit error, re-raise it
+                    print(f"   ❌ Error: {str(e)[:100]}")
+                    raise
+        
+        if response is None:
+            raise Exception(f"Failed to get response for query {idx} after all retries")
+        
+        # Process successful response
+        pred_response_objs.append(response)
+        
+        # Extract and store the LLM-generated answer
+        answer_text = str(response)
+        generated_answers.append(answer_text)
+        
+        # Extract and store retrieved chunks
+        chunks_for_question = []
+        if hasattr(response, 'source_nodes') and response.source_nodes:
+            print(f"   📄 Retrieved {len(response.source_nodes)} chunks:")
+            for node_idx, source_node in enumerate(response.source_nodes, 1):
+                node_text = source_node.node.get_content()
+                score = source_node.score if hasattr(source_node, 'score') else 'N/A'
+                chunks_for_question.append({
+                    "chunk_index": node_idx,
+                    "text": node_text,
+                    "score": float(score) if isinstance(score, (int, float)) else score,
+                })
+                print(f"      Chunk {node_idx} (score: {score:.3f}): {node_text[:80]}...")
+        else:
+            print(f"   ⚠️  No source nodes retrieved")
+        
+        retrieved_chunks_list.append(chunks_for_question)
+        
+        # Show answer preview
+        answer_preview = answer_text[:150] + "..." if len(answer_text) > 150 else answer_text
+        print(f"   💬 Answer: {answer_preview}")
+        print(f"   ✓ Response received\n")
+        
+        # Delay between queries
+        if idx < len(eval_qs):
+            print(f"   ⏳ Waiting {QUERY_DELAY}s before next query...")
+            for remaining in range(QUERY_DELAY, 0, -1):
+                print(f"      {remaining}s remaining...", end='\r')
+                time.sleep(1)
+            print(f"   ✓ Ready for next query\n")
     
     # Run evaluation
     print("\n" + "="*70)
@@ -339,6 +451,13 @@ async def main():
     print(f"Max Score: {np.max(semantic_scores):.4f}")
     print(f"Std Dev: {np.std(semantic_scores):.4f}")
     print(f"Total Questions: {len(semantic_scores)}")
+    
+    print("\n" + "="*60)
+    print("🔑 API Keys Used During Evaluation")
+    print("="*60)
+    for key_num in sorted(api_keys_used):
+        print(f"  • GROQ_API_KEY_{key_num}")
+    print(f"Total API keys utilized: {len(api_keys_used)}")
     
     print("\n" + "="*60)
     print("Preprocess.co + Groq Evaluation Complete!")

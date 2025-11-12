@@ -8,7 +8,6 @@ Usage:
 
 import os
 import sys
-import time
 import argparse
 from pathlib import Path
 from dotenv import load_dotenv
@@ -28,12 +27,16 @@ EMBEDDING_DIMENSION= 768
 # Preprocessing parameters
 PREPROCESS_OPTIONS = {
     "table_output_format": "markdown",
-    "repeat_table_header": True,
+    "repeat_table_header": True, 
     "merge": True,
-    "keep_header": False,
+    # "keep_header": False, # TODO: must be enabled/True since it works in conjunction with smart_header=True
+    "keep_header": True, 
     "smart_header": True,
     "keep_footer": False,
-    "image_text": False,
+    "image_text": False, # TODO: see if this could help (based on the nature of images we have in the documents)
+    #repeat_title: True, : enable this and see difference/improvements (since it's supposed to increase contextualization of chunks)
+    "repeat_title": True,
+    "language": "fr", # TODO: recently added : to be tested
 }
 
 
@@ -91,53 +94,6 @@ def initialize_pinecone():
     return pc.Index(INDEX_NAME)
 
 
-def poll_for_chunks(preprocess, max_wait_minutes=120, check_interval=30):
-    """
-    Poll the Preprocess API for chunks, up to max_wait_minutes.
-    
-    Args:
-        preprocess: Preprocess instance
-        max_wait_minutes: Maximum minutes to wait (default: 120)
-        check_interval: Seconds between checks (default: 30)
-    
-    Returns:
-        List of chunks or None if timeout
-    """
-    print(f"Polling for chunks (up to {max_wait_minutes} minutes)...")
-    print(f"Checking every {check_interval} seconds...")
-    
-    start_time = time.time()
-    max_wait_seconds = max_wait_minutes * 60
-    check_count = 0
-    
-    while True:
-        elapsed = time.time() - start_time
-        
-        if elapsed > max_wait_seconds:
-            print(f"Timeout: Document is still processing after {max_wait_minutes} minutes.")
-            print("Try running the script again later to check if processing is complete.")
-            return None
-        
-        check_count += 1
-        elapsed_minutes = int(elapsed / 60)
-        elapsed_seconds = int(elapsed % 60)
-        
-        # Try to get the result
-        try:
-            result = preprocess.result()
-            chunks = getattr(result, "chunks", None)
-            
-            if chunks:
-                print(f"✓ Chunks are ready after {elapsed_minutes}m {elapsed_seconds}s!")
-                return chunks
-            else:
-                print(f"  Check #{check_count} - Not ready yet ({elapsed_minutes}m {elapsed_seconds}s). Retrying in {check_interval}s...")
-        except Exception as e:
-            print(f"  Check #{check_count} - Still processing ({elapsed_minutes}m {elapsed_seconds}s): {str(e)[:50]}")
-        
-        time.sleep(check_interval)
-
-
 def load_and_preprocess_document(preprocess_api_key, document_path):
     """Load and preprocess the document using Preprocess API.
     
@@ -172,28 +128,23 @@ def load_and_preprocess_document(preprocess_api_key, document_path):
     print("Uploading and starting chunking job...")
     preprocess.chunk()
     
-    # Poll for chunks with robust retry logic
-    chunks = poll_for_chunks(preprocess, max_wait_minutes=40, check_interval=30)
+    # Wait for the chunking to complete (blocks until done)
+    print("Waiting for chunking to complete...")
+    result = preprocess.wait()
     
-    if not chunks:
-        print("No chunks available yet. Please retry later.")
-        return []
-    
-    print(f"Successfully loaded {len(chunks)} chunks")
+    # Get chunks from the result
+    chunks = result.data['chunks']
+    print(f"✓ Successfully loaded {len(chunks)} chunks")
     
     # Convert chunks to LlamaIndex Document objects
     documents = []
     for i, chunk in enumerate(chunks):
-        # Handle both dict and object attribute access
-        chunk_text = getattr(chunk, "content", "")
-        page = getattr(chunk, "page", None)
-        chunk_type = getattr(chunk, "type", "text")
+        # Chunks are strings according to the SDK documentation
+        chunk_text = chunk
         
         metadata = {
             "chunk_id": i,
-            "page": page,
-            "type": chunk_type,
-            "document_name": doc_name,  # Add document name for uniqueness
+            "document_name": doc_name,
             "document_path": document_path,
         }
         
