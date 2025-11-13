@@ -22,21 +22,19 @@ load_dotenv()
 
 # Configuration
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = "preprocess-tool-chuning-ats-chrono"
+INDEX_NAME = "enhanced-preprocess-tool-chunking-ats-chrono"
 EMBEDDING_DIMENSION= 768
 # Preprocessing parameters
 PREPROCESS_OPTIONS = {
     "table_output_format": "markdown",
     "repeat_table_header": True, 
     "merge": True,
-    # "keep_header": False, # TODO: must be enabled/True since it works in conjunction with smart_header=True
     "keep_header": True, 
-    "smart_header": True,
+    "smart_header": False,
     "keep_footer": False,
-    "image_text": False, # TODO: see if this could help (based on the nature of images we have in the documents)
-    #repeat_title: True, : enable this and see difference/improvements (since it's supposed to increase contextualization of chunks)
+    "image_text": False, # TODO: see if this could help (set it to true and text) (based on the nature of images we have in the documents)
     "repeat_title": True,
-    "language": "fr", # TODO: recently added : to be tested
+    "language": "fr", 
 }
 
 

@@ -22,7 +22,7 @@ load_dotenv()
 
 # Configuration
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = "preprocess-tool-chuning-ats-chrono"
+INDEX_NAME = "enhanced-preprocess-tool-chunking-ats-chrono"
 EMBEDDING_DIMENSION = 768
 CHUNKS_DIRECTORY = "chrono-preprocess-chunks"
 

@@ -1,0 +1,37 @@
+{
+  "document": "test-include-sub-headers.docx",
+  "total_chunks": 4,
+  "preprocess_options": {
+    "table_output_format": "markdown",
+    "repeat_table_header": true,
+    "merge": true,
+    "keep_header": true,
+    "smart_header": false,
+    "keep_footer": false,
+    "image_text": false,
+    "repeat_title": true,
+    "language": "fr"
+  },
+  "chunks": [
+    {
+      "chunk_index": 0,
+      "text": "1.1.1.1.\nDétails des User stories\na)- US- Flux entrant : Mapping des \"Données de la commande Lors de la réception d'une demande de création, d'annulation de commande ou de devis, les données transmises par WOOP sont structurées selon son propre modèle de données.\nLe middleware effectue alors un mapping pour transformer ces données au format attendu par le modèle de données de la Standard API.\nLe modèle de données de la Standard API, décrit en détail dans la section 3.2.1.3 Modèle de données de la commande \"Standard API\", est mappé avec les champs provenant des requêtes WOOP.\nCette transformation garantit la conformité des commandes sur le Middleware XL EDS.",
+      "length": 665
+    },
+    {
+      "chunk_index": 1,
+      "text": "1.1.1.1.\nDétails des User stories\nLe tableau ci-dessous présente en détail le mapping des différents champs entre le modèle WOOP et celui de la Standard API : | Attribut | Standard API | Description | | Attribut WOOP | || Attribut | Standard API | Description | | Attribut WOOP | |\n| Référence de la commande | | Identifiant unique interne Middleware | deliveryId | | |\n| quoteld | | | quoteld | | |\n| Type | | Interprété depuis le champ \"Service\": Type = Pickup s'il y a le service \"SERVICE RETURN\" | | | |\n| Prestation | | Interprétée depuis le champ interval | | | |\n| Client reference | | Référence interne chez le client | referenceNumber | | |\n| Canal | | interprété depuis le champ \"value\" pour \"tags / Key\" = \"pricing\" | tags | value | |\n| Items | reference | | packages | references | reference |\n| Items | name | | | | |\n| Items | type | | | | |\n| Items | description | | | | |\n| Items | quantity | | packages | quantity | |\n| Items | width | | packages | width | value |\n| Items | length | | packages | lenght | value |\n| Items | height | | packages | height | value |\n| Items | price | | | | |\n| Items | services | Applicables à tous les articles de la commande | services | | |\n| Service | | | | | |\n| | | | delivery / picking | location | addressLine1 |\n| | | | delivery / picking | location | addressLine2 |\n| addresses | address | | delivery / picking | location | country |\n| | | | delivery / picking | location | city |\n| | | | delivery / picking | location | district |\n| | | | delivery / picking | location | postalCode |\n| addresses | additionalAddres | | delivery / picking | location | doorCode |\n| | S | | delivery / picking | infos | |\n| addresses | Elevator | | delivery / picking | location | elevator |\n| addresses | Floor | | delivery / picking | location | floor |\n| addresses | lat | | delivery / picking | location | coordinates |",
+      "length": 1862
+    },
+    {
+      "chunk_index": 2,
+      "text": "1.1.1.1.\nDétails des User stories\n| Attribut | Standard API | Description | | Attribut WOOP | || Attribut | Standard API | Description | | Attribut WOOP | |\n| addresses | Ing | | delivery / picking | location | coordinates |\n| timeWindow | start | | delivery / picking | interval | start |\n| timeWindow | end | | delivery / picking | interval | end |\n| Magasin | | | retailer | code | |\n| consommateur | Prénom | | delivery / picking | location | firstName |\n| consommateur | Nom | | delivery / picking | location | lastName |\n| consommateur final | Email | | delivery / picking | location | email |\n| consommateur | N° de téléphone | | delivery / picking | location | phone |",
+      "length": 676
+    },
+    {
+      "chunk_index": 3,
+      "text": "Remarque :\n- Ce tableau ne présente que les champs reçus de WOOP.\nToutes les données du modèle de la Standard API qui ne figurent pas dans ce tableau sont soit interprétées par le middleware, soit fournies directement par Urbantz.\nLe client WOOP ne prend pas en charge la modification directe des commandes via une requête bien spécifique.\nPour toute mise à jour des données de la commande, il envoie successivement deux requêtes au middleware XL EDS : d'abord une annulation de la commande existante, puis une création d'une nouvelle commande en conservant la même référence client.",
+      "length": 583
+    }
+  ]
+}

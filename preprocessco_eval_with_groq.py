@@ -205,12 +205,12 @@ async def main():
     print("="*70)
     
     # Configuration
-    PINECONE_INDEX_NAME = "preprocess-tool-chuning-ats-chrono"
+    PINECONE_INDEX_NAME = "enhanced-preprocess-tool-chunking-ats-chrono"
     #info: some question got chunk at position 20 (score: 0.619): 
     # info:       Chunk 30 (score: 0.609): Formule de calcul pour la détermination du "Prix Point relais" :
     # info using TOP_K 20, 30: we are experiencing a significant latency and execcd the groq Token per xxx rate limit 
     # TODO: we need a reranker and a context synthestization
-    TOP_K = 10
+    TOP_K = 8
     SIMILARITY_CUTOFF = 0.5
     QUERY_DELAY = 11  # 11 seconds between queries
     

@@ -18,7 +18,7 @@ load_dotenv()
 # Configuration
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PREPROCESS_API_KEY = os.getenv("PREPROCESS_API_KEY")
-INDEX_NAME = "preprocess-tool-chuning-ats-chrono"
+INDEX_NAME = "enhanced-preprocess-tool-chunking-ats-chrono"
 DOCUMENT_PATH = "Spec détaillées - Middleware XL EDS (ATS __ XL EDS __ CHRONOPOST).docx"
 
 # Preprocessing parameters
