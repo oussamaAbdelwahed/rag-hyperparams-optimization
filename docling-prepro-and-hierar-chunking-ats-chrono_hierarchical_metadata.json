@@ -1,0 +1,16 @@
+{
+  "total_chunks": 1,
+  "chunks": [
+    {
+      "doc_id": "3e773a37-e160-4602-a5fd-3a6928cf5e6f",
+      "text_preview": "#### 1 EPIC : “Gestion des Logs système”\n\n### 1 Fonctionnalité “Paramètres du Back office”\n\n#### 1.1 EPIC : “Gestion des Catégories CNR”\n\n##### 1.1.1 Description générale\n\nL’EPIC regroupe l’ensemble d",
+      "text_length": 143742,
+      "metadata": {
+        "source_file": "chrono-docs/4.docx",
+        "chunk_index": 0,
+        "total_chunks": 1,
+        "chunk_type": "hierarchical"
+      }
+    }
+  ]
+}

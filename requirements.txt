@@ -9,6 +9,8 @@ llama-index-embeddings-huggingface
 llama-index-experimental
 
 # Docling integration for advanced document processing
+docling>=2.0.0
+docling-core>=2.0.0
 llama-index-readers-docling
 llama-index-node-parser-docling
 
@@ -24,3 +26,4 @@ nest-asyncio
 numpy
 torch
 transformers
+rich  # For pretty console output
