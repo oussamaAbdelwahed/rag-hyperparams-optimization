@@ -1,0 +1,25 @@
+{
+  "queries": {
+    "q5": "Quelles sont les modifications de commande autorisées avant Cut off ?",
+    "q8": "Quelles sont les différentes actions/étapes qui sont réalisées par le middleware pour la création d'un commande ? \n(étapes permettant d'aboutir à la création de commande dans le middleware et l'envoi à Urbantz)",
+    "q9": "Pour l'intégration de Woop dans le middleware, quels sont les flux de données sortant à intégrer ?",
+    "q11": "Dans le mapping Woop, standard API, quelle est la donnée Woop qui correspond à l'attribut Magasin de la standard API ?",
+    "q15": "Lors de l'intégration avec WOOP, comment le service additionnel \"Passage à 4\" est-il interprété par le middleware pour la Standard API ?",
+    "q20": "Pour le calcul de la surcharge, sur quel prix s'applique le pourcentage de surcharge ?",
+    "q26": "Pour une commande de \"Retour marchandise\" gérée via CENTIRO, quel est le code et le statut Centiro est envoyé lorsque le statut dans le middleware passe à \"Chargement validé\" ?",
+    "q29": "Quel est le premier contrôle effectué par le middleware lors de la réception d'une demande de création de commande via la Standard API ?",
+    "q33": "Dans le cadre de l'intégration avec WOOP, quel service WOOP entrant est interprété par le middleware comme une commande de type \"Retour marchandise\" (Pickup) ?",
+    "q37": "Quel est le mécanisme qui déclenche l'alerte de type \"Indice CNR (M-1) manquant\" ?"
+  },
+  "responses": {
+    "q5": "Modification de Service\nModification de Services additionnels\nModification de l’Adresse de livraison\nModification de l’Adresse de collecte\nModification liée à l’Ascenseur\nModification liée aux Étages\nModification des Informations des articles de la commande\nModification des Créneaux de livraison",
+    "q8": "- Vérification du statut du magasin \n- Vérification de la référence client de commande \n- Vérification des jours Off \n- Vérification de la prestation de la commande \n- Vérification des paramètres de la commande\n- Vérification des créneaux de livraison \n- Vérification du cut off \n- Vérification des capacités des groupement magasins \n- Calcul de la Distance via Google API\n- Tarification de la commande\n- Création de la commande \"Standard API\" Statut commande = \"Créée\"\nMise à jour des capacités : * Magasin , * Regroupement magasins\n- Envoi de la commande  à URBANTZ\n- Réception du Webhook  \"TaskAnnouced\"\n- Mise à jour Statut de la commande :  Statut = \"Annoncée\"",
+    "q9": "Delivery request (Demande de création de commande)\nDelete a delivery (Demande d’annulation de commande)\nQuote request (Demande de devis de commande)\nCancel quote (Demande de refus de devis de commande)",
+    "q11": "- retailer",
+    "q15": "Il est interprété en fonction du poids des articles de la commande",
+    "q20": "(Prix_base - Prix des étages)",
+    "q29": "La vérification du statut (actif ou inactif) du magasin donneur d'ordre",
+    "q33": "SERVICE_RETURN",
+    "q37": "Un CRON job qui s'éxécute le premier jour de chaque mois pour vérifier les indices du mois précédent"
+  }
+}
