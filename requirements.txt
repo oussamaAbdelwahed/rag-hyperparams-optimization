@@ -8,6 +8,10 @@ llama-index-llms-groq
 llama-index-embeddings-huggingface
 llama-index-experimental
 
+# LlamaParse for document parsing
+llama-cloud-services
+llama-parse
+
 # Docling integration for advanced document processing
 docling>=2.0.0
 docling-core>=2.0.0
@@ -27,3 +31,9 @@ numpy
 torch
 transformers
 rich  # For pretty console output
+
+# Document conversion
+markitdown[docx]  # For DOCX to Markdown conversion
+
+# Reranking for improved retrieval
+sentence-transformers  # For cross-encoder reranking models
