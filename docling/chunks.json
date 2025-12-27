@@ -5,65 +5,20 @@
     "enriched_text": "Détails des User stories 1\n1 US- Flux entrant : Mapping des “Données de la commande“\nLors de la réception d’une demande de création, d’annulation de commande ou de devis, les données transmises par WOOP sont structurées selon son propre modèle de données. Le middleware effectue alors un mapping pour transformer ces données au format attendu par le modèle de données de la Standard API.\nLe modèle de données de la Standard API, décrit en détail dans la section 3.2.1.3 - Modèle de données de la commande “Standard API”, est mappé avec les champs provenant des requêtes WOOP. Cette transformation garantit la conformité des commandes sur le Middleware XL EDS.\nLe tableau ci-dessous présente en détail le mapping des différents champs entre le modèle WOOP et celui de la Standard API :",
     "char_count": 784,
     "token_count": 222,
-    "docling_metadata": {
-      "schema_name": "docling_core.transforms.chunker.DocMeta",
-      "version": "1.0.0",
-      "doc_items": [
-        {
-          "self_ref": "#/texts/2",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "text",
-          "prov": []
-        },
-        {
-          "self_ref": "#/texts/3",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "text",
-          "prov": []
-        },
-        {
-          "self_ref": "#/texts/4",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "text",
-          "prov": []
-        }
-      ],
+    "metadata": {
       "headings": [
         "Détails des User stories 1",
         "1 US- Flux entrant : Mapping des “Données de la commande“"
       ],
       "captions": null,
-      "origin": {
-        "mimetype": "text/markdown",
-        "binary_hash": 7635068606995693367,
-        "filename": "test-docling-chunking.md",
-        "uri": null
-      }
+      "chunk_index": 0,
+      "questions_this_excerpt_can_answer": ""
     },
-    "llamaindex_metadata": {
-      "headings": [
-        "Détails des User stories 1",
-        "1 US- Flux entrant : Mapping des “Données de la commande“"
-      ],
-      "captions": null,
-      "questions_this_excerpt_can_answer": "1: q1,2: q2"
-    },
-    "metadata_enriched_chunk": "<metadata>headings:['Détails des User stories 1', '1 US- Flux entrant : Mapping des “Données de la commande“']\ncaptions:None\nquestions_this_excerpt_can_answer:1: q1,2: q2</metadata>\n-----\nContent:\nLors de la réception d’une demande de création, d’annulation de commande ou de devis, les données transmises par WOOP sont structurées selon son propre modèle de données. Le middleware effectue alors un mapping pour transformer ces données au format attendu par le modèle de données de la Standard API.\nLe modèle de données de la Standard API, décrit en détail dans la section 3.2.1.3 - Modèle de données de la commande “Standard API”, est mappé avec les champs provenant des requêtes WOOP. Cette transformation garantit la conformité des commandes sur le Middleware XL EDS.\nLe tableau ci-dessous présente en détail le mapping des différents champs entre le modèle WOOP et celui de la Standard API :"
+    "questions_this_excerpt_can_answer": [
+      "1. What specific types of incoming requests from WOOP (creation, annulment of orders, or quotes) trigger the middleware to perform data mapping to the Standard API model?",
+      "2. In the context of User Story 1 for incoming flows, where is the detailed field-by-field mapping between the WOOP data model and the Standard API order data model presented?",
+      "3. What is the purpose of the middleware's transformation of WOOP request data into the Standard API format, and which system benefits from the resulting order compliance?"
+    ]
   },
   {
     "chunk_id": 1,
@@ -71,43 +26,20 @@
     "enriched_text": "Détails des User stories 1\n1 US- Flux entrant : Mapping des “Données de la commande“\n| Attribut Standard API    |                   | Description                                                                                | Attribut WOOP      |            |              |\n|--------------------------|-------------------|--------------------------------------------------------------------------------------------|--------------------|------------|--------------|\n| Référence de la commande |                   | Identifiant unique interne Middleware                                                      | deliveryId         |            |              |\n| quoteId                  |                   |                                                                                            | quoteId            |            |              |\n| Type                     |                   | Interprété depuis le champ “Service”: - Type = Pickup s’il y a le service “SERVICE_RETURN” |                    |            |              |\n| Prestation               |                   | Interprétée depuis le champ interval                                                       |                    |            |              |\n| Client reference         |                   | Référence interne chez le client                                                           | referenceNumber    |            |              |\n| Canal                    |                   | interprété depuis le champ “value” pour : “tags / Key” = “pricing”                         | tags               | value      |              |\n| Items                    | reference         |                                                                                            | packages           | references | reference    |\n| Items                    | name              |                                                                                            |                    |            |              |\n| Items                    | type              |                                                                                            |                    |            |              |\n| Items                    | description       |                                                                                            |                    |            |              |\n| Items                    | quantity          |                                                                                            | packages           | quantity   |              |\n| Items                    | width             |                                                                                            | packages           | width      | value        |\n| Items                    | length            |                                                                                            | packages           | lenght     | value        |\n| Items                    | height            |                                                                                            | packages           | height     | value        |\n| Items                    | price             |                                                                                            |                    |            |              |\n| Items                    | services          | Applicables à tous les articles de la commande                                             | services           |            |              |\n| Service                  |                   |                                                                                            | services           |            |              |",
     "char_count": 3713,
     "token_count": 499,
-    "docling_metadata": {
-      "schema_name": "docling_core.transforms.chunker.DocMeta",
-      "version": "1.0.0",
-      "doc_items": [
-        {
-          "self_ref": "#/tables/0",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "table",
-          "prov": []
-        }
-      ],
+    "metadata": {
       "headings": [
         "Détails des User stories 1",
         "1 US- Flux entrant : Mapping des “Données de la commande“"
       ],
       "captions": null,
-      "origin": {
-        "mimetype": "text/markdown",
-        "binary_hash": 7635068606995693367,
-        "filename": "test-docling-chunking.md",
-        "uri": null
-      }
+      "chunk_index": 1,
+      "questions_this_excerpt_can_answer": ""
     },
-    "llamaindex_metadata": {
-      "headings": [
-        "Détails des User stories 1",
-        "1 US- Flux entrant : Mapping des “Données de la commande“"
-      ],
-      "captions": null,
-      "questions_this_excerpt_can_answer": "1: q1,2: q2"
-    },
-    "metadata_enriched_chunk": "<metadata>headings:['Détails des User stories 1', '1 US- Flux entrant : Mapping des “Données de la commande“']\ncaptions:None\nquestions_this_excerpt_can_answer:1: q1,2: q2</metadata>\n-----\nContent:\n| Attribut Standard API    |                   | Description                                                                                | Attribut WOOP      |            |              |\n|--------------------------|-------------------|--------------------------------------------------------------------------------------------|--------------------|------------|--------------|\n| Référence de la commande |                   | Identifiant unique interne Middleware                                                      | deliveryId         |            |              |\n| quoteId                  |                   |                                                                                            | quoteId            |            |              |\n| Type                     |                   | Interprété depuis le champ “Service”: - Type = Pickup s’il y a le service “SERVICE_RETURN” |                    |            |              |\n| Prestation               |                   | Interprétée depuis le champ interval                                                       |                    |            |              |\n| Client reference         |                   | Référence interne chez le client                                                           | referenceNumber    |            |              |\n| Canal                    |                   | interprété depuis le champ “value” pour : “tags / Key” = “pricing”                         | tags               | value      |              |\n| Items                    | reference         |                                                                                            | packages           | references | reference    |\n| Items                    | name              |                                                                                            |                    |            |              |\n| Items                    | type              |                                                                                            |                    |            |              |\n| Items                    | description       |                                                                                            |                    |            |              |\n| Items                    | quantity          |                                                                                            | packages           | quantity   |              |\n| Items                    | width             |                                                                                            | packages           | width      | value        |\n| Items                    | length            |                                                                                            | packages           | lenght     | value        |\n| Items                    | height            |                                                                                            | packages           | height     | value        |\n| Items                    | price             |                                                                                            |                    |            |              |\n| Items                    | services          | Applicables à tous les articles de la commande                                             | services           |            |              |\n| Service                  |                   |                                                                                            | services           |            |              |"
+    "questions_this_excerpt_can_answer": [
+      "1. What is the specific WOOP attribute mapped to the Standard API's \"Référence de la commande\", and what is its description as an internal middleware identifier?",
+      "2. How is the Standard API \"Type\" field interpreted from the WOOP data, particularly regarding the \"SERVICE_RETURN\" service?",
+      "3. In the Items mapping, what are the exact WOOP paths for width, length, and height dimensions (including any noted spelling variations like \"lenght\")?"
+    ]
   },
   {
     "chunk_id": 2,
@@ -115,43 +47,20 @@
     "enriched_text": "Détails des User stories 1\n1 US- Flux entrant : Mapping des “Données de la commande“\n| addresses                | address           |                                                                                            | delivery / picking | location   | addressLine1 |\n| addresses                | address           |                                                                                            | delivery / picking | location   | addressLine2 |\n| addresses                | address           |                                                                                            | delivery / picking | location   | country      |\n| addresses                | address           |                                                                                            | delivery / picking | location   | city         |\n| addresses                | address           |                                                                                            | delivery / picking | location   | district     |\n| addresses                | address           |                                                                                            | delivery / picking | location   | postalCode   |\n| addresses                | additionalAddress |                                                                                            | delivery / picking | location   | doorCode     |\n| addresses                | additionalAddress |                                                                                            | delivery / picking | infos      |              |\n| addresses                | Elevator          |                                                                                            | delivery / picking | location   | elevator     |\n| addresses                | Floor             |                                                                                            | delivery / picking | location   | floor        |\n| addresses                | lat               |                                                                                            | delivery / picking | location   | coordinates  |\n| addresses                | lng               |                                                                                            | delivery / picking | location   | coordinates  |\n| timeWindow               | start             |                                                                                            | delivery / picking | interval   | start        |\n| timeWindow               | end               |                                                                                            | delivery / picking | interval   | end          |\n| Magasin                  |                   |                                                                                            | retailer           | code       |              |\n| consommateur             | Prénom            |                                                                                            | delivery / picking | location   | firstName    |\n| consommateur             | Nom               |                                                                                            | delivery / picking | location   | lastName     |\n| consommateur final       | Email             |                                                                                            | delivery / picking | location   | email        |\n| consommateur             | N° de téléphone   |                                                                                            | delivery / picking | location   | phone        |",
     "char_count": 3713,
     "token_count": 329,
-    "docling_metadata": {
-      "schema_name": "docling_core.transforms.chunker.DocMeta",
-      "version": "1.0.0",
-      "doc_items": [
-        {
-          "self_ref": "#/tables/0",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "table",
-          "prov": []
-        }
-      ],
+    "metadata": {
       "headings": [
         "Détails des User stories 1",
         "1 US- Flux entrant : Mapping des “Données de la commande“"
       ],
       "captions": null,
-      "origin": {
-        "mimetype": "text/markdown",
-        "binary_hash": 7635068606995693367,
-        "filename": "test-docling-chunking.md",
-        "uri": null
-      }
+      "chunk_index": 2,
+      "questions_this_excerpt_can_answer": ""
     },
-    "llamaindex_metadata": {
-      "headings": [
-        "Détails des User stories 1",
-        "1 US- Flux entrant : Mapping des “Données de la commande“"
-      ],
-      "captions": null,
-      "questions_this_excerpt_can_answer": "1: q1,2: q2"
-    },
-    "metadata_enriched_chunk": "<metadata>headings:['Détails des User stories 1', '1 US- Flux entrant : Mapping des “Données de la commande“']\ncaptions:None\nquestions_this_excerpt_can_answer:1: q1,2: q2</metadata>\n-----\nContent:\n| addresses                | address           |                                                                                            | delivery / picking | location   | addressLine1 |\n| addresses                | address           |                                                                                            | delivery / picking | location   | addressLine2 |\n| addresses                | address           |                                                                                            | delivery / picking | location   | country      |\n| addresses                | address           |                                                                                            | delivery / picking | location   | city         |\n| addresses                | address           |                                                                                            | delivery / picking | location   | district     |\n| addresses                | address           |                                                                                            | delivery / picking | location   | postalCode   |\n| addresses                | additionalAddress |                                                                                            | delivery / picking | location   | doorCode     |\n| addresses                | additionalAddress |                                                                                            | delivery / picking | infos      |              |\n| addresses                | Elevator          |                                                                                            | delivery / picking | location   | elevator     |\n| addresses                | Floor             |                                                                                            | delivery / picking | location   | floor        |\n| addresses                | lat               |                                                                                            | delivery / picking | location   | coordinates  |\n| addresses                | lng               |                                                                                            | delivery / picking | location   | coordinates  |\n| timeWindow               | start             |                                                                                            | delivery / picking | interval   | start        |\n| timeWindow               | end               |                                                                                            | delivery / picking | interval   | end          |\n| Magasin                  |                   |                                                                                            | retailer           | code       |              |\n| consommateur             | Prénom            |                                                                                            | delivery / picking | location   | firstName    |\n| consommateur             | Nom               |                                                                                            | delivery / picking | location   | lastName     |\n| consommateur final       | Email             |                                                                                            | delivery / picking | location   | email        |\n| consommateur             | N° de téléphone   |                                                                                            | delivery / picking | location   | phone        |"
+    "questions_this_excerpt_can_answer": [
+      "1. In the mapping for \"Données de la commande\" in the incoming flux (US-1), which source field under \"addresses\" maps to \"delivery / picking | location | elevator\"?",
+      "2. How does the \"timeWindow\" from the order data map to the target structure for delivery/picking intervals in this specific user story mapping?",
+      "3. In the \"consommateur final\" section of the order data mapping, what target path is used for the \"Email\" field under delivery/picking?"
+    ]
   },
   {
     "chunk_id": 3,
@@ -159,42 +68,19 @@
     "enriched_text": "Détails des User stories 2\nUS “Commande: Livraison de marchandise”\n| Statut (Standard API)   |                                    |             | Statut (CENTIRO)         |    |\n|-------------------------|------------------------------------|-------------|--------------------------|----|\n| Id Statut               | Statut                             | Code Statut | Statut                   |    |\n| 1                       | Créée                              |             |                          |    |\n| 2                       | Annoncée                           |             |                          |    |\n| 3                       | Planning validé                    |             |                          |    |\n| 4                       | Echec de chargement                | 93          | Failed delivery          |    |\n| 5                       | Chargement validé                  | 19          | Handed over to TSP       |    |\n| 6                       | En cours de livraison              | 92          | Loaded on delivery truck |    |\n| 7                       | Livrée                             | 99          | Order delivered          |    |\n| 90:1                    | Delivered at PUP                   |             |                          |    |\n| 8                       | Echec de livraison                 | 96          | Customer refusal         |    |\n| 93                      | Failed delivery                    |             |                          |    |\n| 9                       | Annulation XL EDS                  | 93          | Failed delivery          |    |\n| 10                      | Annulation Client                  |             |                          |    |\n| 11                      | Annulation Client tardive          |             |                          |    |\n| 12                      | Annulation Client après chargement | 98:2        | Returned to store        |    |",
     "char_count": 1953,
     "token_count": 353,
-    "docling_metadata": {
-      "schema_name": "docling_core.transforms.chunker.DocMeta",
-      "version": "1.0.0",
-      "doc_items": [
-        {
-          "self_ref": "#/tables/1",
-          "parent": {
-            "cref": "#/body"
-          },
-          "children": [],
-          "content_layer": "body",
-          "meta": null,
-          "label": "table",
-          "prov": []
-        }
-      ],
+    "metadata": {
       "headings": [
         "Détails des User stories 2",
         "US “Commande: Livraison de marchandise”"
       ],
       "captions": null,
-      "origin": {
-        "mimetype": "text/markdown",
-        "binary_hash": 7635068606995693367,
-        "filename": "test-docling-chunking.md",
-        "uri": null
-      }
+      "chunk_index": 3,
+      "questions_this_excerpt_can_answer": ""
     },
-    "llamaindex_metadata": {
-      "headings": [
-        "Détails des User stories 2",
-        "US “Commande: Livraison de marchandise”"
-      ],
-      "captions": null,
-      "questions_this_excerpt_can_answer": "1: q1,2: q2"
-    },
-    "metadata_enriched_chunk": "<metadata>headings:['Détails des User stories 2', 'US “Commande: Livraison de marchandise”']\ncaptions:None\nquestions_this_excerpt_can_answer:1: q1,2: q2</metadata>\n-----\nContent:\n| Statut (Standard API)   |                                    |             | Statut (CENTIRO)         |    |\n|-------------------------|------------------------------------|-------------|--------------------------|----|\n| Id Statut               | Statut                             | Code Statut | Statut                   |    |\n| 1                       | Créée                              |             |                          |    |\n| 2                       | Annoncée                           |             |                          |    |\n| 3                       | Planning validé                    |             |                          |    |\n| 4                       | Echec de chargement                | 93          | Failed delivery          |    |\n| 5                       | Chargement validé                  | 19          | Handed over to TSP       |    |\n| 6                       | En cours de livraison              | 92          | Loaded on delivery truck |    |\n| 7                       | Livrée                             | 99          | Order delivered          |    |\n| 90:1                    | Delivered at PUP                   |             |                          |    |\n| 8                       | Echec de livraison                 | 96          | Customer refusal         |    |\n| 93                      | Failed delivery                    |             |                          |    |\n| 9                       | Annulation XL EDS                  | 93          | Failed delivery          |    |\n| 10                      | Annulation Client                  |             |                          |    |\n| 11                      | Annulation Client tardive          |             |                          |    |\n| 12                      | Annulation Client après chargement | 98:2        | Returned to store        |    |"
+    "questions_this_excerpt_can_answer": [
+      "1. What is the CENTIRO status and code corresponding to the Standard API status \"Echec de chargement\" (ID 4)?",
+      "2. Which Standard API statuses map to the CENTIRO code 93 for \"Failed delivery\"?",
+      "3. What CENTIRO status and code is used for the Standard API \"Chargement validé\" (ID 5)?"
+    ]
   }
 ]

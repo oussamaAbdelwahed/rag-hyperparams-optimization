@@ -4,24 +4,30 @@ Test script to chunk a markdown document using Docling's HybridChunker.
 This script:
 1. Loads the test-docling-chunking.md file
 2. Uses Docling's HybridChunker to chunk the document
-3. Writes the output chunks to chunks.json
+3. Extracts questions using QuestionsAnsweredExtractor
+4. Writes the output chunks to chunks.json
 
 Usage:
     python test-markdown-alteration.py
 """
+from dotenv import load_dotenv
 
+import os
 import json
-import pprint
 from pathlib import Path
 from llama_index.core import Document
+from llama_index.core.extractors import QuestionsAnsweredExtractor
+from llama_index.llms.openai_like import OpenAILike #to use OpenRouter instead of Groq
+
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import MetadataMode
 
-# Try to import HybridChunker and tokenizer from docling
+# assume documents are defined -> extract nodes
+from llama_index.core.ingestion import IngestionPipeline
 try:
     from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
     from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
     from transformers import AutoTokenizer
-    # from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
     from docling_core.types.doc.document import DoclingDocument
     from docling_core.transforms.chunker.hierarchical_chunker import (
         ChunkingDocSerializer,
@@ -39,16 +45,12 @@ except ImportError as e:
     exit(1)
 
 from docling.document_converter import DocumentConverter
+from typing import Any, List
 
 
-# class MDTableSerializerProvider(ChunkingSerializerProvider):
-#     def get_serializer(self, doc):
-#         return ChunkingDocSerializer(
-#             doc=doc,
-#             table_serializer=MarkdownTableSerializer(),  # configuring a different table serializer
-#             text_serializer=MarkdownTextSerializer(),
-#             annotation_serializer=MarkdownAnnotationSerializer(),
-#         )
+load_dotenv()
+
+
 
 class MDSerializerProvider(ChunkingSerializerProvider):
     def get_serializer(self, doc):
@@ -81,21 +83,102 @@ MAX_TOKENS = 512  # Maximum tokens per chunk
 MERGE_PEERS = True  # Merge undersized peer chunks when possible
 MARKDOWN_INPUT_FILE = "test-docling-chunking.md"
 OUTPUT_FILE = "chunks.json"
+NUM_QUESTIONS = 3  # Number of questions to extract per chunk
 
 
-def chunk_markdown_with_docling_hybrid(file_path: Path):
+def _initialize_llm():
+    """Initialize OpenRouter LLM for question extraction."""
+    api_key = os.getenv("OPEN_ROUTER_API_KEY")
+    if not api_key:
+        print("⚠️  OPEN_ROUTER_API_KEY not found in environment variables. Question extraction will be skipped.")
+        return None
+    
+    llm = OpenAILike(
+        model="x-ai/grok-4.1-fast",
+        api_base="https://openrouter.ai/api/v1",
+        api_key=api_key,
+        max_retries=3,
+        timeout=60.0,
+    )
+    return llm
+
+
+def _initialize_qa_extractor(llm, num_questions: int = 3) -> QuestionsAnsweredExtractor:
+    """Initialize QuestionsAnsweredExtractor with the given LLM.
+    
+    Args:
+        llm: LLM instance to use for question generation
+        num_questions: Number of questions to generate per node
+        
+    Returns:
+        QuestionsAnsweredExtractor instance
+    """
+    return QuestionsAnsweredExtractor(
+        questions=num_questions,
+        llm=llm,
+        embedding_only=False,  # Set to False to include in retrievable metadata
+        show_progress=True,  # Show progress during extraction
+    )
+
+
+def _extract_questions_sync(nodes: List[Document], extractor: QuestionsAnsweredExtractor):
+    """Extract questions synchronously using QuestionsAnsweredExtractor.
+    
+    Note: This uses manual LLM calls instead of the extractor's aextract() method
+    because aextract() has issues with Document nodes in certain contexts.
+    
+    Args:
+        nodes: List of Document nodes
+        extractor: QuestionsAnsweredExtractor instance
+        
+    Returns:
+        Nodes with extracted questions in metadata
+    """
+
+    
+    prompt_template = extractor.prompt_template
+    prompt = PromptTemplate(template=prompt_template)
+    
+    # Extract questions for each node using manual LLM calls
+    for i, node in enumerate(nodes):
+        try:
+            context_str = node.get_content(metadata_mode=MetadataMode.LLM)
+            
+            # Call LLM with the question generation prompt
+            questions_response = extractor.llm.predict(
+                prompt, num_questions=extractor.questions, context_str=context_str
+            )
+            
+            # Add to node metadata
+            node.metadata['questions_this_excerpt_can_answer'] = questions_response.strip()
+            
+        except Exception as e:
+            print(f"    ❌ Node {i+1}: Error extracting questions - {e}")
+            node.metadata['questions_this_excerpt_can_answer'] = ""
+            node.excluded_embed_metadata_keys = ["captions"]
+            node.excluded_llm_metadata_keys = ["captions","questions_this_excerpt_can_answer"]
+    
+    return nodes
+
+
+def chunk_markdown_with_docling_hybrid(file_path: Path, llm=None) -> tuple[List[dict], List[Document]]:
     """Chunk markdown document using Docling's HybridChunker with proper tokenization.
     
     Args:
         file_path: Path to the markdown file
+        llm: Optional LLM instance for question extraction
     
     Returns:
-        List of chunk dictionaries with text and metadata
+        List of chunk dictionaries with text and metadata, and list of enriched Document nodes
     """
     print("\nChunking document with Docling HybridChunker...")
     print(f"Embedding model: {EMBEDDING_MODEL}")
     print(f"Max tokens per chunk: {MAX_TOKENS}")
 
+    if llm:
+        print(f"✅ LLM initialized for question extraction")
+    else:
+        print(f"⚠️  LLM not available - questions will not be extracted")
 
     
     # Step 1: Convert the markdown file to DoclingDocument
@@ -108,16 +191,9 @@ def chunk_markdown_with_docling_hybrid(file_path: Path):
             "type": "markdown",
             "encoding": "utf-8",
         },
-        # raises_on_error = True,
-        # max_num_pages = 500,
-        # max_file_size= 10 * 1024 * 1024, 
-        # page_range = (1, 2), 
     )
     dl_doc = conv_result.document
 
-    # exported_markdown = dl_doc.export_to_markdown()
-    
-    print(f"DoclingDocument created: {len(dl_doc.texts)} text elements")
     
     # Step 2: Initialize tokenizer aligned with embedding model
     # This is CRITICAL for RAG: the chunker and embedding model must use the same tokenizer
@@ -143,69 +219,90 @@ def chunk_markdown_with_docling_hybrid(file_path: Path):
     
     print(f"Created {len(chunks)} chunks from HybridChunker")
     
-    # Step 5: Convert chunks to dictionaries with enriched text
-    output_chunks = []
+    # Step 5: Convert chunks to Documents (nodes)
     nodes = []
+    output_chunks = []
+    
     for i, chunk in enumerate(chunks):
         # Use contextualize() to get the enriched text with metadata
-        # This includes the metadata in the chunk itself (default behavior): llama Dociument allow to define how to serialize metadata and which metadata to pass to the embedding model and which to the llm :https://www.youtube.com/watch?v=yzPQaNhuVGU
         enriched_text = chunker.contextualize(chunk=chunk)
 
-        dumpedMeta  = chunk.meta.model_dump()
+        dumpedMeta: dict[str, Any]  = chunk.meta.model_dump()
         relevantMetadata = {
             "headings": dumpedMeta["headings"],
             "captions": dumpedMeta["captions"],
-            "questions_this_excerpt_can_answer": "1: q1,2: q2" # TODO: to be generated by an LLM and written automatically using the dedicated LLAMAINDEX QuestionsAnsweredExtractor(llm=llm_transformations, questions=3)
-            # "origin": dumpedMeta["origin"], # kind of useless (just infos about the source file)
+            "chunk_index": i,
+            "questions_this_excerpt_can_answer": "",  # Placeholder for extracted questions
         }
 
         doc = Document(
             text=chunk.text,
             metadata=relevantMetadata,
-            #excluded_embed_metadata_keys=[],
-            #excluded_llm_metadata_keys=["headings", "captions"],
-
-            # Formatting the metadata
+            excluded_embedding_metadata_keys=["captions"],  # Exclude captions from embedding metadata
+            excluded_llm_metadata_keys=["captions", "questions_this_excerpt_can_answer"],
             metadata_seperator="\n",
             metadata_template="{key}:{value}",
-            text_template="<metadata>{metadata_str}</metadata>\n-----\nContent:\n{content}", # The Anthropic way to define the metadata
+            text_template="<metadata>{metadata_str}</metadata>\n-----\nContent:\n{content}",
         )
         nodes.append(doc)
 
-        print("*********************** chunck metadata (from docling doc) ***************** \n", chunk.meta.model_dump())
-           
-        print("*********************** chunck metadata (from llamaindex created doc) ***************** \n", doc.metadata)
-        
         chunk_dict = {
             "chunk_id": i,
             "text": chunk.text,
             "enriched_text": enriched_text,
             "char_count": len(enriched_text),
-            # Add token count estimation (approximate)
             "token_count": len(hf_tokenizer.encode(enriched_text)),
-            "docling_metadata": chunk.meta.model_dump(),
-            "llamaindex_metadata": doc.metadata,
-            "metadata_enriched_chunk": doc.get_content(metadata_mode=MetadataMode.EMBED)
+            "metadata": relevantMetadata,
         }
         output_chunks.append(chunk_dict)
     
-    print(f"Converted to {len(output_chunks)} output chunks")
-    
-    # Print some statistics
-    if output_chunks:
-        char_counts = [c["char_count"] for c in output_chunks]
-        token_counts = [c["token_count"] for c in output_chunks]
-        
-        print(f"\nChunk Statistics:")
-        print(f"  Total chunks: {len(output_chunks)}")
-        print(f"  Character count - Min: {min(char_counts)}, Max: {max(char_counts)}, Avg: {sum(char_counts) // len(char_counts)}")
-        print(f"  Token count - Min: {min(token_counts)}, Max: {max(token_counts)}, Avg: {sum(token_counts) // len(token_counts)}")
-    
-    return output_chunks
+    # Step 6: Extract questions using QuestionsAnsweredExtractor
+    if llm and nodes:
+        print(f"\nExtracting questions using QuestionsAnsweredExtractor...")
+        try:
+            qa_extractor = _initialize_qa_extractor(llm, NUM_QUESTIONS)
+            
+            # Use synchronous extraction
+            extracted_nodes = _extract_questions_sync(nodes, qa_extractor)
+            
+            # Update output_chunks with extracted questions from metadata
+            for i, node in enumerate(extracted_nodes):
+                if i < len(output_chunks):
+                    # QuestionsAnsweredExtractor stores questions as a string in 'questions_this_excerpt_can_answer'
+                    questions_str = node.metadata.get('questions_this_excerpt_can_answer', '')
+                    # Split the questions string into a list (questions are typically separated by newlines)
+                    questions = [q.strip() for q in questions_str.split('\n') if q.strip()] if questions_str else []
+                    output_chunks[i]['questions_this_excerpt_can_answer'] = questions
+                    if questions:
+                        print(f"  ✅ Chunk {i+1}: Extracted {len(questions)} questions")
+                    else:
+                        print(f"  ⚠️  Chunk {i+1}: No questions extracted (raw: {questions_str[:100] if questions_str else 'empty'})")
+            
+            nodes = extracted_nodes
+            
+        except Exception as e:
+            import traceback
+            print(f"  ❌ Error during question extraction: {e}")
+            print(f"  Full traceback:")
+            traceback.print_exc()
+            # Set empty questions if extraction fails
+            for chunk_dict in output_chunks:
+                chunk_dict['questions_this_excerpt_can_answer'] = []
+    else:
+        # Set empty questions if no LLM available
+        for chunk_dict in output_chunks:
+            chunk_dict['questions_this_excerpt_can_answer'] = []
+
+    return output_chunks, nodes
+
+
 
 
 def main():
     """Main function to chunk markdown and save to JSON."""
+    # Initialize LLM for question extraction
+    llm = _initialize_llm()
+    
     # Get the script directory
     script_dir = Path(__file__).parent
     
@@ -219,9 +316,10 @@ def main():
     print(f"File size: {input_path.stat().st_size} bytes")
     
     # Chunk the document
-    chunks = chunk_markdown_with_docling_hybrid(input_path)
-    for chunk in chunks:
-        pprint.pprint(chunk)
+    chunks, nodes = chunk_markdown_with_docling_hybrid(input_path, llm=llm)
+    for i, node in enumerate(nodes):
+        res = node.get_content(metadata_mode=MetadataMode.LLM)
+        print(f"Node Metadata enriched text {res}")
     
     # Write chunks to JSON file
     output_path = script_dir / OUTPUT_FILE
@@ -232,15 +330,6 @@ def main():
     
     print(f"✓ Successfully wrote chunks to {output_path}")
     print(f"  Output file size: {output_path.stat().st_size} bytes")
-    
-    # Show preview of first chunk
-    if chunks:
-        print(f"\n=== Preview of First Chunk ===")
-        print(f"Chunk ID: {chunks[0]['chunk_id']}")
-        print(f"Character count: {chunks[0]['char_count']}")
-        print(f"Token count: {chunks[0]['token_count']}")
-        print(f"Text preview (first 200 chars):")
-        print(chunks[0]['text'][:200] + "..." if len(chunks[0]['text']) > 200 else chunks[0]['text'])
 
 
 if __name__ == "__main__":

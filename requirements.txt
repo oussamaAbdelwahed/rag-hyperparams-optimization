@@ -11,13 +11,13 @@ llama-index-experimental
 # LlamaParse for document parsing
 llama-cloud-services
 llama-parse
-
+nest_asyncio
 # Docling integration for advanced document processing
 docling>=2.0.0
 docling-core>=2.0.0
 llama-index-readers-docling
 llama-index-node-parser-docling
-
+llama-index-llms-openai-like
 # Pinecone Vector Database
 pinecone-client>=3.0.0
 llama-index-vector-stores-pinecone
