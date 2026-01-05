@@ -84,9 +84,11 @@ except ImportError as e:
 # ============================================================================
 
 # Index Configuration
-PINECONE_INDEX_NAME = "docling-hybrid-enriched-ats-chrono"
-EMBEDDING_MODEL = "BAAI/bge-base-en-v1.5"
-EMBEDDING_DIMENSION = 768
+PINECONE_INDEX_NAME = "1024-mulng-docling-hybrid-enriched-ats-chrono"
+# EMBEDDING_MODEL = "BAAI/bge-base-en-v1.5" # 768 dim (only en & ch langs are supported)
+# EMBEDDING_MODEL = "BAAI/bge-large-en-v1.5" # multilingual (wrong since it only support en as lang but our chrono doc is in french -> we need a multilingual )
+EMBEDDING_MODEL = "BAAI/bge-m3"
+EMBEDDING_DIMENSION = 1024  # BGE Large dimension
 MAX_TOKENS_PER_CHUNK = 512
 MERGE_PEERS = True
 
@@ -109,7 +111,8 @@ LLM_MODEL = "x-ai/grok-4.1-fast"
 # Evaluation Configuration
 INITIAL_TOP_K = 25
 RERANK_TOP_N = 5
-RERANKER_MODEL = "BAAI/bge-reranker-large"
+# RERANKER_MODEL = "BAAI/bge-reranker-large" # 512 token limit
+RERANKER_MODEL = "BAAI/bge-reranker-v2-m3" # 8192 token limit & it's multilingual
 SIMILARITY_CUTOFF = 0.55
 QUERY_DELAY = 2
 
@@ -130,6 +133,7 @@ CRITICAL GUIDELINES:
 5. When answering, cite specific sections/parts from the context when possible
 6. If multiple interpretations are possible, acknowledge this and present them briefly
 7. Use technical precision - this is for software developers and PO (product owners) who need exact specifications/need to validate their understanding
+8. Answer using the user question/query language (e.g., if user asks in French, answer in French)
 
 RESPONSE FORMAT:
 - Start with a direct answer (1-2 sentences when possible)
